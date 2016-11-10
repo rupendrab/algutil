@@ -17,6 +17,8 @@ public class ParallelMergeSort<T extends Comparable<T>>
     Class<T> clazz;
     ExecutorService exec;
     ArrayList<Callable<T[]>> tasks;
+    int parallelThreshold = 1000000;
+    int quicksortThreshold = 10000;
     
     public ParallelMergeSort(Class<T> clazz, T[] items)
     {
@@ -84,7 +86,7 @@ public class ParallelMergeSort<T extends Comparable<T>>
         else
         {
             int mid = (from + to) / 2;
-            if ( to - from > 1000000)
+            if ( to - from > parallelThreshold)
             {
                 @SuppressWarnings("unchecked")
                 T[] sorted1 = (T[]) Array.newInstance(clazz, mid-from);
@@ -138,11 +140,11 @@ public class ParallelMergeSort<T extends Comparable<T>>
                 }
                 return merge(sorted1, sorted2);
             }
-            else if (to - from < 50)
+            else if (to - from < quicksortThreshold)
             {
                 T[] sorted = Arrays.copyOfRange(items, from, to);
-                InsertSort<T> ins = new InsertSort<T>(sorted, true);
-                return ins.sort();
+                QuickSort<T> qs = new QuickSort<T>(sorted, true);
+                return qs.sort();
             }
             else
             {
