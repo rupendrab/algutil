@@ -1,5 +1,6 @@
 package com.alg;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Random;
@@ -85,6 +86,77 @@ public class ClosestPoints
         return pointsY;
     }
 
+    public Point[] closestPair()
+    {
+        Point[] Px = sortedByX();
+        Point[] Py = sortedByY();
+        int from = 0;
+        int to = points.length;
+        return closestPair(Px, Py, from, to);
+    }
+
+    public Point[] closer(Point[] set1, Point[] set2)
+    {
+        if (set1 == null || set1.length == 0)
+        {
+            return set2;
+        }
+        if (set2 == null || set2.length == 0)
+        {
+            return set1;
+        }
+        double dist1 = set1[0].distance(set1[1]);
+        double dist2 = set2[0].distance(set2[1]);
+        if (dist1 <= dist2)
+        {
+            return set1;
+        }
+        else
+        {
+            return set2;
+        }
+    }
+    
+    public Point[] closestPair(Point[] Px, Point[] Py, int from, int to)
+    {
+        Point[] result = new Point[2];
+        // Base case; length of both arrays = 1
+        if (to - from == 1) // Only one point, no pair possible
+        {
+            return null;
+        }
+        if (to - from == 2) // Return the only pair
+        {
+            result[0] = Px[from];
+            result[1] = Py[from+1];
+            return result;
+        }
+        // There are at least three points in the set
+        int mid = (from + to) / 2;
+        Point[] resultQ = closestPair(Px, Py, from, mid);
+        Point[] resultR = closestPair(Px, Py, mid, to);
+        double distQ = resultQ[0].distance(resultQ[1]);
+        double distR = resultR[0].distance(resultR[1]);
+        double delta = Math.min(distQ, distR);
+        Point[] resultS = closestSplitPair(Px, Py, from, to, delta);
+        return closer(closer(resultQ, resultR), resultS);
+    }
+    
+    public Point[] closestSplitPair(Point[] Px, Point[] Py, int from, int to, double delta)
+    {
+        int mid = (from + to) / 2;
+        double xBar = Px[mid].x;
+        ArrayList<Point> Sy = new ArrayList<Point>();
+        for (Point p : Py)
+        {
+            if (p.x >= xBar - delta && p.x <= xBar + delta)
+            {
+                Sy.add(p);
+            }
+        }
+        return null;
+    }
+    
     public int[] computeClosestBruteForce()
     {
         int[] pair = new int[2];
