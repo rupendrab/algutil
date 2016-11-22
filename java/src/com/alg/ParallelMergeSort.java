@@ -143,7 +143,7 @@ public class ParallelMergeSort<T extends Comparable<T>>
             else if (to - from < quicksortThreshold)
             {
                 T[] sorted = Arrays.copyOfRange(items, from, to);
-                QuickSort<T> qs = new QuickSort<T>(sorted, true);
+                QuickSortOld<T> qs = new QuickSortOld<T>(sorted, true);
                 return qs.sort();
             }
             else
