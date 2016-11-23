@@ -19,7 +19,7 @@ public class QuickSortInt
     int[] pcts = new int[101];
     int cntr = 0;
     int comparisons = 0;
-    public enum PivotType {FIRST, LAST, MEDIAN};
+    public enum PivotType {FIRST, LAST, MEDIAN, RANDOM};
     
     public QuickSortInt(int[] arr)
     {
