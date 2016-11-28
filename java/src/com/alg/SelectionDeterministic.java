@@ -1,14 +1,21 @@
 package com.alg;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.Hashtable;
 import java.util.Random;
+import java.util.Set;
 
 public class SelectionDeterministic
 {
     int comparisons = 0;
     int noSwaps = 0;
+    int noCalls = 0;
+    int noAllCalls = 0;
+    Hashtable<Integer, Integer> partitionPerformance = new Hashtable<Integer, Integer>();
     
     public SelectionDeterministic()
     {
@@ -37,13 +44,15 @@ public class SelectionDeterministic
                 len, i, Arrays.toString(arr)));
         pause();
         */
+        noAllCalls += 1;
         if (len <= 1)
         {
             return arr[0];
         }
+        noCalls += 1;
         int[] medians = getMediansByFive(arr, arr.length);
         int n = medians.length;
-        int pivot = DSelect(medians, n, n/2);
+        int pivot = new SelectionDeterministic().DSelect(medians, n, n/2);
         /*
         System.out.println("Pivot is " + pivot);
         System.out.println("arr is " + Arrays.toString(arr));
@@ -54,6 +63,12 @@ public class SelectionDeterministic
         pivotPosition = partition(arr, 0, len, pivotPosition);
         // System.out.println("New Pivot position is " + pivotPosition);
         // System.out.println("Array is " + Arrays.toString(arr));
+        /*
+        System.out.println(String.format("Array = %s, pivotPosition = %d", Arrays.toString(arr), pivotPosition));
+        int left = pivotPosition;
+        int right = arr.length - 1 - pivotPosition;
+        System.out.println(String.format("Pct Left = %3.2f", left * 100.0 / arr.length));
+        */
         if (pivotPosition - 1 == i)
         {
             return arr[pivotPosition-1];
@@ -162,7 +177,40 @@ public class SelectionDeterministic
         }
         swap(arr, from, splitPosition - 1);
         // System.out.println(arrayView(from, to) + " : " + splitPosition);
+        addPartitionPerformance(from, to, splitPosition);
         return splitPosition;
+    }
+    
+    public void addPartitionPerformance(int from, int to, int splitPosition)
+    {
+        int left = splitPosition - from;
+        int right = to - splitPosition - 1;
+        int pct = left * 100 / (to - from);
+        if (left > right)
+        {
+            pct = right * 100 / (to - from);
+        }
+        Integer perf = partitionPerformance.get(pct);
+        if (perf == null)
+        {
+            perf = 1;
+        }
+        else
+        {
+            perf += 1;
+        }
+        // System.out.println(String.format("Left = %d, Right = %d, Pct = %d", left, right, pct));
+        partitionPerformance.put(pct, perf);
+    }
+    
+    public void showPartitionPerformance()
+    {
+        ArrayList<Integer> keys = new ArrayList<Integer>(partitionPerformance.keySet());
+        Collections.sort(keys);
+        for (int pct : keys)
+        {
+            System.out.println(String.format("%-5d : %d", pct, partitionPerformance.get(pct)));
+        }
     }
     
     public static void testQuickMedian()
@@ -177,6 +225,8 @@ public class SelectionDeterministic
     
     public static int[] createRandomIntegerArrayNoDuplicates(int size, int maxVal)
     {
+        long start, end = 0;
+        start = Util.getTime();
         int[] data = new int[size];
         Random rand = new Random();
         HashSet<Integer> added = new HashSet<Integer>();
@@ -190,6 +240,9 @@ public class SelectionDeterministic
             added.add(newVal);
             data[i] = newVal;
         }
+        end = Util.getTime();
+        System.out.print("Random array created : ");
+        Util.showElapsed(start, end);
         return data;
     }
     
@@ -232,6 +285,8 @@ public class SelectionDeterministic
             System.out.println("Calculated = " + act);
             end = Util.getTime();
             Util.showElapsed(start, end);
+            System.out.println("Number of recursive calls = " + sel.noAllCalls);
+            System.out.println("Number of recursive calls with size > 1 = " + sel.noCalls);
         }
         catch (Exception e)
         {
@@ -248,6 +303,7 @@ public class SelectionDeterministic
         end = Util.getTime();
         Util.showElapsed(start, end);
         System.out.println("Matched = " + (act == data[rank]));
+        sel.showPartitionPerformance();
     }
     
     public static void test02()
@@ -267,6 +323,7 @@ public class SelectionDeterministic
         System.out.println("data = " + Arrays.toString(data));
         Arrays.sort(data);
         System.out.println("Actual = " + data[5]);
+        sel.showPartitionPerformance();
     }
     
     public static void test03()
@@ -302,7 +359,7 @@ public class SelectionDeterministic
         // testQuickMedian();
         // test02();
         // test03();
-        test01(15000000, 100);
+        test01(10000000, 100);
     }
 
 }
