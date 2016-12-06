@@ -11,12 +11,22 @@ import java.util.Hashtable;
 import java.util.Map.Entry;
 import java.util.Random;
 
+import com.alg.Util;
+
 public class Graph
 {
     HashSet<Integer> nodes = new HashSet<Integer>();
-    ArrayList<Edge> edges = new ArrayList<Edge>();
+    Hashtable<Edge, Integer> edges = new Hashtable<Edge, Integer>();
     Hashtable<Integer, ArrayList<Edge>> nodesEdges = new Hashtable<Integer, ArrayList<Edge>>();
     Hashtable<Integer, HashSet<Integer>> mergedNodes = new Hashtable<Integer, HashSet<Integer>>();
+    int noEdges;
+    
+    Random rand = new Random();
+
+    public Graph()
+    {
+        super();
+    }
     
     public Graph copy()
     {
@@ -30,20 +40,49 @@ public class Graph
             for (Edge e : edges)
             {
                 Edge ne = new Edge(e.u, e.v);
+                ne.setValid(e.isValid());
                 n.addNodeEdge(node, ne);
+                if (node == e.u)
+                {
+                    Integer cnt = n.edges.get(ne);
+                    if (cnt == null)
+                    {
+                        n.edges.put(ne,  1);
+                    }
+                    else
+                    {
+                        n.edges.put(ne,  cnt + 1);
+                    }
+                }
             }
         }
-        for (Edge e : edges)
-        {
-            n.edges.add(e);
-        }
+        n.noEdges = noEdges;
         return n;
+    }
+    
+    public void validate()
+    {
+        for (int n : nodes)
+        {
+            ArrayList<Edge> nodeEdges = nodesEdges.get(n);
+            System.out.println("Evaluating node " + n);
+            for (Edge e : nodeEdges)
+            {
+            }
+        }
+    }
+    
+    public void removeEdge(Edge e)
+    {
+        edges.remove(e);
+        noEdges--;
     }
     
     public void mergeEdge(Edge e)
     {
         Integer node1 = e.u;
         Integer node2 = e.v;
+        // System.out.println(String.format("Node1 = %d, Node2 = %d", node1, node2));
         ArrayList<Edge> node2Edges = nodesEdges.get(node2);
         ArrayList<Edge> toRemove = new ArrayList<Edge>();
         for (Edge node2Edge : node2Edges)
@@ -55,19 +94,41 @@ public class Graph
             }
             if (otherNode != node1)
             {
+                /*
                 Edge newEdge = new Edge(node1, otherNode);
                 addNodeEdge(node1, newEdge);
                 addNodeEdge(otherNode, newEdge);
                 edges.add(newEdge);
+                */
+                Integer cnt = edges.remove(node2Edge);
+                toRemove.add(node2Edge);
+                Edge newEdge = node2Edge.reassignNode(node2, node1);
+                addNodeEdge(node1, newEdge);
+                addNodeEdge(otherNode, newEdge);
+                Integer cnt2 = edges.get(newEdge);
+                if (cnt2 == null)
+                {
+                    edges.put(newEdge, 1);
+                }
+                else
+                {
+                    edges.put(newEdge, cnt2 + 1);
+                }
+                // System.out.println("Reassigned node = " + node2Edge + " : " + node2Edge.origEdges);
             }
-            toRemove.add(node2Edge);
+            else
+            {
+                toRemove.add(node2Edge);
+            }
         }
         for (Edge tre : toRemove)
         {
+            // System.out.println("Removing edge " + tre);
             removeNodeEdge(tre.u, tre);
             removeNodeEdge(tre.v, tre);
-            edges.remove(tre);
+            removeEdge(tre);
         }
+        // showEdges(node1);
         HashSet<Integer> merged = mergedNodes.get(node1); 
         if (merged == null)
         {
@@ -87,11 +148,6 @@ public class Graph
         nodes.remove(node2);
     }
     
-    public Graph()
-    {
-        super();
-    }
-    
     public void addNodeEdge(int node, Edge edge)
     {
         ArrayList<Edge> nodeEdge = nodesEdges.get(node);
@@ -109,14 +165,56 @@ public class Graph
     
     public void removeNodeEdge(int node, Edge edge)
     {
+        // System.out.println("Remove edge " + edge + " from node " + node);
         ArrayList<Edge> nodeEdge = nodesEdges.get(node);
+        // System.out.println("Before removal " + nodeEdge);
         nodeEdge.remove(edge);
+        // System.out.println("After removal " + nodeEdge);
     }
 
+    public void readFromNodeFile(String fileName) throws IOException
+    {
+        nodesEdges = new Hashtable<Integer, ArrayList<Edge>>();
+        HashSet<Integer> myNodes = new HashSet<Integer>();
+        BufferedReader reader = new BufferedReader(new FileReader(new File(fileName)));
+        String line = null;
+        while((line = reader.readLine()) != null)
+        {
+            String[] parts = line.split("\\s+");
+            // System.out.println(Arrays.toString(parts));
+            if (parts.length > 0)
+            {
+                Integer startNode = Integer.parseInt(parts[0]);
+                myNodes.add(startNode);
+                for (int i=1; i<parts.length; i++)
+                {
+                    Integer adjacentNode = Integer.parseInt(parts[i]);
+                    myNodes.add(adjacentNode);
+                    Edge e = new Edge(startNode, adjacentNode);
+                    if (startNode > adjacentNode)
+                    {
+                        Integer cnt = edges.get(e);
+                        if (cnt == null)
+                        {
+                            edges.put(e, 1);
+                        }
+                        else
+                        {
+                            edges.put(e, cnt + 1);
+                        }
+                    }
+                    addNodeEdge(startNode, e);
+                }
+            }
+        }
+        reader.close();
+        nodes = myNodes;
+        noEdges = edges.size();
+    }
+    
     public void readFromFile(String fileName) throws IOException
     {
         nodesEdges = new Hashtable<Integer, ArrayList<Edge>>();
-        ArrayList<Edge> myEdges = new ArrayList<Edge>();
         HashSet<Integer> myNodes = new HashSet<Integer>();
         BufferedReader reader = new BufferedReader(new FileReader(new File(fileName)));
         String line = null;
@@ -130,9 +228,17 @@ public class Graph
                 Edge e = new Edge(u, v);
                 myNodes.add(u);
                 myNodes.add(v);
-                if (! myEdges.contains(e))
+                if (u > v)
                 {
-                    myEdges.add(e);
+                    Integer cnt = edges.get(e);
+                    if (cnt == null)
+                    {
+                        edges.put(e,  1);
+                    }
+                    else
+                    {
+                        edges.put(e,  cnt + 1);
+                    }
                 }
                 addNodeEdge(u, e);
                 // addNodeEdge(v, e);
@@ -140,7 +246,7 @@ public class Graph
         }
         reader.close();
         nodes = myNodes;
-        edges = myEdges;
+        noEdges = edges.size();
         // System.out.println("Edges = " + edges.size());
     }
     
@@ -156,41 +262,130 @@ public class Graph
         }
     }
     
-    private Edge getRandomEdge()
+    private int getRandomNode()
     {
-        Random rand = new Random();
-        int pos = rand.nextInt(edges.size());
-        int i=0;
-        for (Edge e : edges)
+        int nodePos = rand.nextInt(nodes.size());
+        int i = 0;
+        for (int n : nodes)
         {
-            if (i == pos)
+            if (i == nodePos)
             {
-                return e;
+                return n;
             }
             i++;
         }
+        return -1;
+    }
+    
+    private Edge getRandomEdge()
+    {
+        int n = getRandomNode();
+        // System.out.println("Random node chosen is "  + n);
+        ArrayList<Edge> edges = nodesEdges.get(n);
+        int pos = rand.nextInt(edges.size());
+        return edges.get(pos);
+    }
+    
+    public String showEdges()
+    {
+        StringBuilder sb = new StringBuilder();
+        return sb.toString();
+    }
+    
+    public Edge[] cutEdges()
+    {
         return null;
     }
     
-    public ArrayList<HashSet<Integer>> minCut()
+    public Edge firstEdge(Edge e)
     {
-        ArrayList<HashSet<Integer>> ret = new ArrayList<HashSet<Integer>>();
+        while (e.origEdges != null && e.origEdges.size() != 0)
+        {
+            e = e.origEdges.get(0);
+        }
+        return e;
+    }
+    
+    public Graph minCut(boolean print)
+    {
+        // validate();
         Graph n = copy();
+        // n.validate();
         while (n.nodes.size() > 2)
+        {
+            if (print)
+            {
+                System.out.println(n.nodes);
+                System.out.println(n.edges);
+                System.out.println(n.nodesEdges);
+                System.out.println(n.mergedNodes);
+                // n.validate();
+                System.out.println("-------------------");
+            }
+            Edge edge = n.getRandomEdge();
+            if (print)
+            {
+                System.out.println("Edges merged = " + edge);
+            }
+            n.mergeEdge(edge);
+        }
+        if (print)
         {
             System.out.println(n.nodes);
             System.out.println(n.edges);
             System.out.println(n.mergedNodes);
+            Integer[] nodes = new Integer[2];
+            n.nodes.toArray(nodes);
+            for (Edge e : n.nodesEdges.get(nodes[0]))
+            {
+                System.out.println(firstEdge(e));
+            }
             System.out.println("-------------------");
-            Edge e = n.getRandomEdge();
-            System.out.println("Edge to merge = " + e);
-            n.mergeEdge(e);
         }
-        System.out.println(n.nodes);
-        System.out.println(n.edges);
-        System.out.println(n.mergedNodes);
-        System.out.println("-------------------");
-        return ret;
+        return n;
+    }
+    
+    int noCuts()
+    {
+        if (nodes.size() == 2)
+        {
+            for (Entry<Edge, Integer> entry : edges.entrySet())
+            {
+                return entry.getValue();
+            }
+        }
+        return Integer.MAX_VALUE;
+    }
+    
+    public Graph findMinCutByIteration()
+    {
+        long start, end = 0;
+        start = Util.getTime();
+        int n = nodes.size();
+        int noIter = (int) (n * (n-1) * 0.5 * Math.log(n * 1.0) / Math.log(2.0));
+        Graph minCutGraph = null;
+        for (int i=0; i<noIter; i++)
+        {
+            Graph graph = minCut(false);
+            if (i == 0)
+            {
+                minCutGraph = graph;
+            }
+            else if (graph.noCuts() < minCutGraph.noCuts())
+            {
+                minCutGraph = graph;
+            }
+            int pctComplete = (int) ((i+1) * 100.0 / noIter);
+            if ((pctComplete >= 10 && pctComplete % 10 == 0))
+            {
+                end = Util.getTime();
+                System.out.print(String.format("Cut %d of %d: minCut = %d : ", (i+1), noIter, minCutGraph.noCuts()));
+                Util.showElapsed(start, end);
+            }
+        }
+        System.out.print(String.format("Cut %d of %d: minCut = %d : ", noIter, noIter, minCutGraph.noCuts()));
+        Util.showElapsed(start, end);
+        return minCutGraph;
     }
     
     public static Graph test01(String fileName) throws IOException
@@ -241,12 +436,46 @@ public class Graph
     public static void test04() throws IOException
     {
         Graph graph = test01("data/01_edges.txt");
-        graph.minCut();
+        graph.minCut(true);
+    }
+    
+    public static void test05(String fileName) throws IOException
+    {
+        Graph graph = new Graph();
+        graph.readFromNodeFile(fileName);
+        // graph.showEdges(3);
+        graph.minCut(true);
     }
 
+    public static void test06(String fileName) throws IOException
+    {
+        Graph graph = new Graph();
+        graph.readFromNodeFile(fileName);
+        Graph mn = graph.findMinCutByIteration();
+        System.out.println(mn.edges);
+        Integer[] nodes = new Integer[2];
+        mn.nodes.toArray(nodes);
+        for (Edge e : mn.nodesEdges.get(nodes[0]))
+        {
+            System.out.println(mn.firstEdge(e));
+        }
+    }
+
+    public static void examineGraph(String fileName) throws IOException
+    {
+        Graph graph = new Graph();
+        graph.readFromNodeFile(fileName);
+        System.out.println("Number of nodes = " + graph.nodes.size());
+        System.out.println("Number of edges = " + graph.noEdges);
+    }
+    
     public static void main(String[] args) throws Exception
     {
-        test04();
+        // test03();
+        // test04();
+        // test05("data/02_nodes.txt");
+        // test06("data/kargerMinCut.txt");
+        examineGraph("data/kargerMinCut.txt");
     }
     
     
