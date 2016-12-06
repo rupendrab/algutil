@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map.Entry;
 
 public class Graph
 {
@@ -18,6 +19,16 @@ public class Graph
         super();
     }
     
+    public HashSet<Integer> getNodes()
+    {
+        return nodes;
+    }
+
+    public HashMap<Integer, ArrayList<Integer>> getNodesEdges()
+    {
+        return nodesEdges;
+    }
+
     public static Graph readFromFile(String fileName) throws IOException
     {
         Graph g = new Graph();
@@ -58,6 +69,27 @@ public class Graph
             }
         }
         reader.close();
+        return g;
+    }
+    
+    @Override
+    public Graph clone()
+    {
+        Graph g = new Graph();
+        for (Entry<Integer, ArrayList<Integer>> entry : nodesEdges.entrySet())
+        {
+            Integer node = entry.getKey();
+            g.nodes.add(node);
+            ArrayList<Integer> connectedNodes = entry.getValue();
+            ArrayList<Integer> nodeEdges = g.nodesEdges.get(node);
+            if (nodeEdges == null)
+            {
+                nodeEdges = new ArrayList<>();
+                g.nodesEdges.put(node, nodeEdges);
+            }
+            nodeEdges.addAll(connectedNodes);
+            g.nodes.addAll(connectedNodes);
+        }
         return g;
     }
 }
