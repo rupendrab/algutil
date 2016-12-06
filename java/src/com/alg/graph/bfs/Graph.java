@@ -92,4 +92,53 @@ public class Graph
         }
         return g;
     }
+    
+    public void addEdge(Integer fromNode, Integer toNode)
+    {
+        ArrayList<Integer> nodeEdges = nodesEdges.get(fromNode);
+        if (nodeEdges == null)
+        {
+            nodeEdges = new ArrayList<>();
+            nodesEdges.put(fromNode, nodeEdges);
+        }
+        nodeEdges.add(toNode);
+    }
+    
+    public Graph reversedEdges()
+    {
+        Graph g = new Graph();
+        for (Integer node : nodes)
+        {
+            g.nodes.add(node);
+        }
+        for (Entry<Integer, ArrayList<Integer>> entry : nodesEdges.entrySet())
+        {
+            Integer node = entry.getKey();
+            g.nodes.add(node);
+            ArrayList<Integer> connectedNodes = entry.getValue();
+            if (connectedNodes != null)
+            {
+                for (Integer neighborNode : connectedNodes)
+                {
+                    g.addEdge(neighborNode, node);
+                }
+            }
+        }
+        return g;
+    }
+    
+    public static void test01(String fileName) throws IOException
+    {
+        Graph g = Graph.readFromFile(fileName);
+        System.out.println(g.nodes);
+        System.out.println(g.nodesEdges);
+        Graph gRev = g.reversedEdges();
+        System.out.println(gRev.nodes);
+        System.out.println(gRev.nodesEdges);
+    }
+    
+    public static void main(String[] args) throws Exception
+    {
+        test01("data/SCC_01.txt");
+    }
 }
