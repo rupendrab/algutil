@@ -93,6 +93,21 @@ public class Graph
         return g;
     }
     
+    public int vertexCount()
+    {
+        return nodes.size();
+    }
+    
+    public int edgesCount()
+    {
+        int edges = 0;
+        for ( ArrayList<Integer> nodes : nodesEdges.values())
+        {
+            edges += nodes.size();
+        }
+        return edges;
+    }
+    
     public void addEdge(Integer fromNode, Integer toNode)
     {
         ArrayList<Integer> nodeEdges = nodesEdges.get(fromNode);
