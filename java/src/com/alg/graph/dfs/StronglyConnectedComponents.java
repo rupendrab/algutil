@@ -170,13 +170,15 @@ public class StronglyConnectedComponents
         end = Calendar.getInstance().getTimeInMillis();
         System.out.println(String.format("Completed in %d ms", (end - start)));
         System.out.println(scc.topConnectedComponentsLengths(5));
+        System.out.println(scc.leaders);
     }
     
     public static void main(String[] args) throws Exception
     {
         // test01("data/SCC_01.txt");
-        test02("C:/Users/rubandyopadhyay/Downloads/SCC.txt");
+        // test02("C:/Users/rubandyopadhyay/Downloads/SCC.txt");
         // 434821,968,459,313,211
         // test02("data/SCC_06.txt");
+        test02("data/SCC_07.txt");
     }
 }

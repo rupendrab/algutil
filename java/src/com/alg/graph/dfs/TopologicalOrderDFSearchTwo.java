@@ -2,6 +2,7 @@ package com.alg.graph.dfs;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.TreeMap;
 
@@ -32,6 +33,7 @@ public class TopologicalOrderDFSearchTwo
     
     public void DFS(Integer startNode)
     {
+        System.out.println("DFS for Node :" + startNode);
         setVisited(startNode);
         ArrayList<Integer> nextNodes = g.getNodesEdges().get(startNode);
         if (nextNodes != null)
@@ -52,7 +54,17 @@ public class TopologicalOrderDFSearchTwo
         topoOrder = new TreeMap<>();
         visited = new HashSet<>();
         current_label = g.getNodes().size();
-        for (Integer node : g.getNodes())
+        ArrayList<Integer> allNodes = new ArrayList(g.getNodes());
+        allNodes.sort(new Comparator<Integer>()
+        {
+            @Override
+            public int compare(Integer o1, Integer o2)
+            {
+                return o2.compareTo(o1);
+            }
+        });
+        // for (Integer node : g.getNodes())
+        for (Integer node : allNodes)
         {
             if (! isVisited(node))
             {
@@ -76,6 +88,8 @@ public class TopologicalOrderDFSearchTwo
     
     public static void main(String[] args) throws Exception
     {
-        test01("data/topo_01.txt");
+        // test01("data/topo_01.txt");
+        System.out.println("Topological Order DF Search Two");
+        test01("data/SCC_07.txt");
     }
 }
