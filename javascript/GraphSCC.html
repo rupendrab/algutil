@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title></title>
+    <style>
+      label {
+          color: blue;
+          /* This is a single-line comment */
+          text-align: left;
+          width: 150px;
+	      display: inline-block;
+	    } 
+      .small-button {
+         font-size: .6em !important;
+        }
+	  #error1 {
+	    color: red;
+	  }
+	  .column {
+        float: left;
+        padding: 15px;
+      }
+    </style> 
+	<!--
+    <link href="jquery-ui-1.12.1/jquery-ui.css" rel="stylesheet">	
+	<script src="jquery-ui-1.12.1/external/jquery/jquery.js"></script>
+	<script src="jquery-ui-1.12.1/jquery-ui-min.js"></script>
+	-->
+	<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+	
+	<script>
+	  $(document).ready(function(){
+	    
+		var re = /^group([0-9]+)$/
+		
+		$("#addGroup").click(function(event){
+		  $("#inputs").find("input[type='text']").each(function(index) {
+		    fieldID = $(this).attr('id');
+			m = fieldID.match(re);
+			lastID = 1
+            if (m)
+			{
+			  lastID = m[1];
+			}
+		  });
+		  nextID = parseInt(lastID) + 1;
+		  var $newInput = $('<input id="group' + nextID + '" type="text"></input>');
+		  var $newLabel = $('<label for="group' + nextID + '">Nodes in Group ' + nextID + ':</label>').css("width", "154px");
+		  $("#inputs").append("<br/>");
+		  $("#inputs").append($newLabel, $newInput);
+		});
+		
+		function isInteger(x)
+		{
+		  return x %1 == 0;
+		}
+		
+		function RandomGraphSCC(numNodes, sccGroups)
+		{
+		  this.numNodes = numNodes;
+	      this.sccGroups = sccGroups;
+		  this.createNodes = createNodes;
+		  this.nodes = createNodes();
+		  this.addEdge = addEdge;
+		  this.edges = {};
+		  this.showEdges = showEdges;
+		  this.randomEdge = randomEdge;
+		  this.createCyclicEdge = createCyclicEdge;
+		  this.createGroupEdges = createGroupEdges;
+		  this.createEdgesBetweenGroups = createEdgesBetweenGroups;
+		  this.createEdges = createEdges;
+		  this.showSCCNodes = showSCCNodes;
+		  // alert(this.nodes);
+		}
+		
+		// Returns a random integer between min (included) and max (excluded)
+        // Using Math.round() will give you a non-uniform distribution!
+
+		function getRandomInt(min, max) 
+		{
+		  min = Math.ceil(min);
+		  max = Math.floor(max);
+		  return Math.floor(Math.random() * (max - min)) + min;
+		}
+		
+		function swap(vals, i, j)
+		{
+		   var temp = vals[i];
+		   vals[i] = vals[j];
+		   vals[j] = temp;
+		}
+		
+		function createNodes()
+		{
+		   available = new Array(this.numNodes);
+		   for(i = 0; i<numNodes; i++)
+		   {
+		     available[i] = i + 1;
+		   }
+		   var toChoose = numNodes;
+		   nodes = new Array(this.numNodes);
+		   for(i = 0; i<numNodes; i++)
+		   {
+		     var nextPos = getRandomInt(0, toChoose);
+			 var nextVal = available[nextPos];
+			 nodes[i] = nextVal;
+			 swap(available, nextPos, toChoose-1);
+			 toChoose -= 1;
+		   }
+		   return nodes;
+		}
+		
+		function Edge(node1, node2)
+		{
+		  this.node1 = node1;
+		  this.node2 = node2;
+		  this.toString = node1 + " " + node2;
+		}
+		
+		function addEdge(e)
+		{
+		  this.edges[e.toString] = e;
+		}
+		
+		function randomEdge(from, to)
+		{
+		  var pos1 = getRandomInt(from, to);
+		  var pos2 = getRandomInt(from, to-1);
+		  var node1 = this.nodes[pos1];
+		  var node2 = this.nodes[pos2];
+		  if (pos2 >= pos1)
+		  {
+		    node2 = this.nodes[pos2 + 1];
+		  }
+		  var e = new Edge(node1, node2);
+		  return e;
+		}
+		
+		function createCyclicEdge(from, to)
+		{
+		  // alert("createCyclicEdge " + from + " to " + to);
+		  for (var i=from+1; i<to; i++)
+		  {
+		    var e = new Edge(this.nodes[i-1], this.nodes[i]);
+			this.addEdge(e);
+		  }
+		  var last = new Edge(this.nodes[to-1], this.nodes[from]);
+		  this.addEdge(last);
+		}
+		
+		function createGroupEdges()
+		{
+		  this.edges = {};
+		  var nodesHandled = 0;
+		  for (var i=0; i<this.sccGroups.length; i++)
+		  {
+		    // alert("i = " + i + ", value = " + this.sccGroups[i]);
+			var from = nodesHandled;
+			var groupCount = this.sccGroups[i] ;
+			var to = from + groupCount;
+			if (to - from > 1)
+			{
+			  this.createCyclicEdge(from, to);
+			  for (var j=0; j<groupCount*2; j++)
+			  {
+			    e = this.randomEdge(from, to);
+				this.addEdge(e);
+			  }
+			}
+			nodesHandled += groupCount;
+		  }
+		}
+		
+		function createEdgesBetweenGroups()
+		{
+		  var nodesHandled = 0;
+		  for (var i=0; i<this.sccGroups.length-1; i++)
+		  {
+		    var groupCount = this.sccGroups[i];
+			var from = nodesHandled;
+			var to = from + groupCount;
+			var fromNext = to;
+			var toNext = fromNext + this.sccGroups[i+1];
+			var noEdges = getRandomInt(1,2);
+			for (var j=0; j<noEdges; j++)
+			{
+			  var pt1 = getRandomInt(from, to);
+			  var pt2 = getRandomInt(fromNext, toNext);
+			  var e = new Edge(this.nodes[pt1], this.nodes[pt2]);
+			  this.addEdge(e);
+			}
+			nodesHandled += groupCount;
+		  }
+		  var groupCount = this.sccGroups[this.sccGroups.length - 1];
+		  var from = nodesHandled;
+		  var to = from + groupCount;
+		  nodesHandled += groupCount;
+		  for (var i=nodesHandled; i<this.numNodes; i++)
+		  {
+		    var pt1 = getRandomInt(from, to);
+			var pt2 = i;
+			var e = new Edge(this.nodes[pt1], this.nodes[pt2]);
+			this.addEdge(e);
+		  }
+		}
+		
+		function createEdges()
+		{
+		  this.createGroupEdges();
+		  this.createEdgesBetweenGroups();
+		}
+		
+		function showEdges()
+		{
+		  // alert(JSON.stringify(this.edges));
+		  var str = "";
+		  for (var key in this.edges)
+		  {
+		    str += key + "\n";
+		  }
+		  $("#graphNodes").val(str);
+		}
+		
+		var checkValue = function(label, val)
+		{
+		  valid = true
+		  msg = ""
+		  nVal = Number(val)
+		  if (isNaN(nVal))
+		  {
+		    valid = false;
+			msg = label + " is not a number";
+  		    return {val : nVal, valid : valid, message : msg};
+		  }
+		  if (nVal <= 0)
+		  {
+		    valid = false;
+			msg = label + " should be positive";
+  		    return {val : nVal, valid : valid, message : msg};
+		  }
+		  if (! isInteger(nVal))
+		  {
+		    valid = false;
+			msg = label + " should be an integer";
+  		    return {val : nVal, valid : valid, message : msg};
+		  }
+  		  return {val : nVal, valid : valid, message : msg};
+		}
+		
+		function checkField(field)
+		{
+		  var $label = $("label[for='"+ field.attr('id') +"']")
+		  ret = checkValue($label.text(), field.val());
+		  if (! ret.valid)
+		  {
+		     txt = $("#error1").html();
+			 $("#error1").html(txt + "<br/>" + ret.message);
+			 return 1;
+		  }
+		  return 0;
+		}
+		
+		function validateGroups(numNodes, sccGroups)
+		{
+		  var total = 0
+		  for (i=0; i<sccGroups.length; i++)
+		  {
+		    total += sccGroups[i];
+		  }
+		  if (total > numNodes)
+		  {
+		    var msg = "Total of groups is more than the number of vertices specified!!!";
+		     txt = $("#error1").html();
+			 $("#error1").html(txt + "<br/>" + msg);
+			 return 1;
+		  }
+		  return 0;
+		}
+		
+		function showSCCNodes()
+		{
+		  var nodesHandled = 0;
+		  for (var i=0; i<this.sccGroups.length; i++)
+		  {
+		    var groupCount = this.sccGroups[i];
+			var from = nodesHandled;
+			var to = from + groupCount;
+			var $fld = $("#scc" + (i+1));
+			var str1 = "";
+			for(var j=from; j<to; j++)
+			{
+			  if (j > from)
+			  {
+			    str1 = str1 + " ";
+			  }
+			  str1 = str1 + this.nodes[j];
+			}
+			if ($fld.length == 1)
+			{
+			   $fld.val(str1);
+			}
+			else
+			{
+			  newHtml = "<h3><u>Nodes in SCC Group " + (i+1) + "</u></h3>";
+			  newHtml += ("<textarea id='scc" + (i+1) + "' style='width: 400px; height: 50px;'></textarea>");
+			  $("#r2").append(newHtml);
+			  $fld = $("#scc" + (i+1));
+			  $fld.val(str1);
+			}
+			nodesHandled += groupCount;
+	      }
+		}
+		
+		var submit = function()
+		{
+		  $("#error1").empty();
+		  noErrors = 0;
+		  $("#inputs").find("input[type='text']").each(function(index) {
+		    noErrors += checkField($(this));
+		  });
+		  if (noErrors == 0)
+		  {
+		    numNodes = parseInt($("#numNodes").val());
+			sccGroups = [];
+		    $("#inputs").find("input[type='text']").each(function(index) {
+  		      fieldID = $(this).attr('id');
+			  m = fieldID.match(re);
+              if (m)
+			  {
+			    groupCount = parseInt($(this).val())
+				sccGroups.push(groupCount);
+			  }
+		    });
+			/*
+			alert(numNodes);
+			alert(sccGroups);
+			*/
+			ret = validateGroups(numNodes, sccGroups);
+			if (ret != 0)
+			{
+			  return;
+			}
+			var rg = new RandomGraphSCC(numNodes, sccGroups);
+			rg.createEdges();
+			rg.showEdges();
+			rg.showSCCNodes();
+		  }
+		}
+		
+		$("#submit").click(function(event){
+		  submit();
+		});
+	  });
+	</script>
+  </head>
+
+  <body>
+
+    <!--[if lt IE 9]><script src="js/excanvas.min.js"></script><![endif]-->
+	<div id="prologue">
+	  <h3>A tool to generate random directed graphs with specific sizes of Strongly Connected Components</h3>
+	  <p>Use this web form to generate random directed graphs that conform to your specified SCC criteria. You may specify the following:</p>
+	  <ol>
+	    <li>The number of nodes or vertices in the graph</li>
+		<li>The number of nodes in  strongly connected components in descending order of the SCC group size (no. of vertices/nodes).<br/>
+		    You may use the "+" button to add more groups.
+		</li>
+	  </ol>
+	  <p>When you click "Generate Graph", the "Graph Edges" as well as the nodes/vertices in each group is displayed.
+	 </p>
+	  <hr/>
+	</div>
+	<div id="inputs">
+	  <label for="numNodes">Number of Nodes:</label>
+	  <input id="numNodes" type="text"></input>
+	  <br/>
+	  <label for="group1">Nodes in Group 1:</label>
+	  <input id="group1" type="text"></input>
+      <button id="addGroup" class="small-button ui-button ui-widget ui-corner-all ui-button-icon-only" title="Add another group">
+        <span class="ui-icon ui-icon-plus"></span> Add another group
+      </button>	
+	  <br/>
+	  <label for="group2">Nodes in Group 2:</label>
+	  <input id="group2" type="text"></input>
+	</div>
+	<div id="process">
+	  <br/>
+	  <hr/>
+      <button id="submit" class="ui-button ui-widget ui-corner-all" title="Generate Graph">
+        <span class="ui-icon ui-icon-plus"></span> Generate Graph
+      </button>
+	  <div id="error">
+	    <p id="error1"></p>
+	  </div>
+      <hr/>	  
+	</div>
+	<div id="result">
+	  <div id="r1" class="column">
+  	    <h3><u>Graph Edges</u></h3>
+	    <textarea id="graphNodes" style="width: 200px; height: 400px;"></textarea>	  
+	  </div>
+	  <div id="r2" class="column">
+  	    <h3><u>Nodes in SCC Group 1</u></h3>
+	    <textarea id="scc1" style="width: 400px; height: 50px;"></textarea>	  
+  	    <h3><u>Nodes in SCC Group 2</u></h3>
+	    <textarea id="scc2" style="width: 400px; height: 50px;"></textarea>	  
+	  </div>
+	</div>
+    
+	<script>
+
+window.onload = function () {
+}
+    </script>
+  </body>
+ </html>
+ 
