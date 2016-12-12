@@ -1,6 +1,11 @@
 package test;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Random;
 
 public class RandomDirectedGraph
@@ -59,6 +64,52 @@ public class RandomDirectedGraph
         return ret;
     }
     
+    public void createEdges(int edgeCount)
+    {
+        try
+        {
+            createEdges(edgeCount, null);
+        }
+        catch (IOException ioe)
+        {
+        }
+    }
+    
+    public void createEdges(int edgeCount, String fileName) throws IOException
+    {
+        HashSet<Edge> created = new HashSet<>();
+        BufferedWriter out = null;
+        if (fileName != null)
+        {
+            out = new BufferedWriter(new FileWriter(new File(fileName)));
+        }
+        for (int i=0; i<edgeCount; i++)
+        {
+            int[] edge = randomEdge();
+            Edge e = new Edge(edge[0], edge[1]);
+            while ( created.contains(e))
+            {
+                edge = randomEdge();
+                e = new Edge(edge[0], edge[1]);
+            }
+            String output = String.format("%d %d", edge[0], edge[1]);
+            if (fileName == null)
+            {
+                System.out.println(output);
+            }
+            else
+            {
+                out.write(output);
+                out.write("\r\n");
+            }
+            created.add(e);
+        }
+        if (out != null)
+        {
+            out.close();
+        }
+    }
+    
     public static void test01(int numNodes)
     {
         RandomDirectedGraph rdg = new RandomDirectedGraph(numNodes);
@@ -83,10 +134,17 @@ public class RandomDirectedGraph
         }
     }
     
+    public static void test03(int numNodes, int numEdges)
+    {
+        RandomDirectedGraph rdg = new RandomDirectedGraph(numNodes);
+        rdg.createEdges(numEdges);
+    }
+
     public static void main(String[] args) throws Exception
     {
         // test01(1000);
-        test02(10);
+        // test02(10);
+        test03(50, 150);
     }
 
 }
