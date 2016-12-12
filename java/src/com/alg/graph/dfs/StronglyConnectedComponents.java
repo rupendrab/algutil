@@ -7,8 +7,12 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map.Entry;
+import java.util.Random;
 
 import com.alg.graph.bfs.Graph;
+
+import test.RandomDirectedGraph;
+import test.RandomGraphSCC;
 
 public class StronglyConnectedComponents
 {
@@ -172,11 +176,35 @@ public class StronglyConnectedComponents
         System.out.println(scc.topConnectedComponentsLengths(5));
     }
     
+    public static void test03(int nodes, int noEdges) throws IOException
+    {
+        String fileName = "C:/temp/scc_" + (new Random().nextInt(1000)) + ".txt";
+        new RandomDirectedGraph(nodes).createEdges(noEdges, fileName);
+        Graph g = Graph.readFromFile(fileName);
+        StronglyConnectedComponents scc = new StronglyConnectedComponents(g);
+        scc.compute(false);
+        System.out.println(scc.topConnectedComponentsLengths(5));
+    }
+    
+    public static void test04(int nodes, int... sccGroups) throws IOException
+    {
+        String fileName = "C:/temp/scc_" + (new Random().nextInt(1000)) + ".txt";
+        new RandomGraphSCC(nodes, sccGroups).printEdges(fileName);
+        Graph g = Graph.readFromFile(fileName);
+        StronglyConnectedComponents scc = new StronglyConnectedComponents(g);
+        scc.compute(false);
+        System.out.println(scc.topConnectedComponentsLengths(5));
+    }
+    
     public static void main(String[] args) throws Exception
     {
         // test01("data/SCC_01.txt");
-        test02("C:/Users/rubandyopadhyay/Downloads/SCC.txt");
+        // test02("C:/Users/rubandyopadhyay/Downloads/SCC.txt");
         // 434821,968,459,313,211
         // test02("data/SCC_06.txt");
+        // test02("data/SCC_08.txt");
+        // test03(100, 500);
+        // test04(10000, 3991, 121, 50, 25, 10);
+        test02("C:/tmp/scc_test.txt");
     }
 }
