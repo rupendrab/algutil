@@ -2,12 +2,14 @@ package com.alg.datastructures;
 
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Comparator;
 import java.util.Random;
 
 public class MinHeap<T extends Comparable<? super T>>
 {
     T[] data;
     int size;
+    Comparator<? super T> comparator;
 
     @SuppressWarnings("unchecked")
     public MinHeap(T[] a)
@@ -16,6 +18,14 @@ public class MinHeap<T extends Comparable<? super T>>
         data = (T[]) java.lang.reflect.Array.newInstance(a.getClass().getComponentType(), 2);
     }
 
+    @SuppressWarnings("unchecked")
+    public MinHeap(T[] a, Comparator<? super T> comparator)
+    {
+        size = 0;
+        data = (T[]) java.lang.reflect.Array.newInstance(a.getClass().getComponentType(), 2);
+        this.comparator = comparator;
+    }
+    
     public MinHeap(T[] data, boolean heapify)
     {
         super();
@@ -25,6 +35,35 @@ public class MinHeap<T extends Comparable<? super T>>
         {
             heapify();
         }
+    }
+    
+    public MinHeap(T[] data, boolean heapify, Comparator<? super T> comparator)
+    {
+        super();
+        this.data = data;
+        size = data.length;
+        if (heapify)
+        {
+            heapify();
+        }
+        this.comparator = comparator;
+    }
+    
+    public int compareTo(T a, T b)
+    {
+        if (comparator == null)
+        {
+            return a.compareTo(b);
+        }
+        else
+        {
+            return comparator.compare(a, b);
+        }
+    }
+
+    public int getSize()
+    {
+        return size;
     }
 
     private void swap(int i, int j)
@@ -58,7 +97,7 @@ public class MinHeap<T extends Comparable<? super T>>
 
     private int smaller(int i, int j)
     {
-        if (data[i].compareTo(data[j]) <= 0)
+        if (compareTo(data[i], data[j]) <= 0)
         {
             return i;
         }
@@ -78,7 +117,7 @@ public class MinHeap<T extends Comparable<? super T>>
         // rightPos));
         if (hasLeft && hasRight)
         {
-            if (data[pos].compareTo(data[leftPos]) > 0 || data[pos].compareTo(data[rightPos]) > 0)
+            if (compareTo(data[pos], data[leftPos]) > 0 || compareTo(data[pos], data[rightPos]) > 0)
             {
                 int smallerPos = smaller(leftPos, rightPos);
                 swap(pos, smallerPos);
@@ -87,14 +126,14 @@ public class MinHeap<T extends Comparable<? super T>>
         }
         else if (hasLeft)
         {
-            if (data[pos].compareTo(data[leftPos]) > 0)
+            if (compareTo(data[pos], data[leftPos]) > 0)
             {
                 swap(pos, leftPos);
             }
         }
         else if (hasRight)
         {
-            if (data[pos].compareTo(data[rightPos]) > 0)
+            if (compareTo(data[pos], data[rightPos]) > 0)
             {
                 swap(pos, rightPos);
             }
@@ -108,7 +147,7 @@ public class MinHeap<T extends Comparable<? super T>>
             return;
         }
         int parentPos = parentPos(pos);
-        if (data[pos].compareTo(data[parentPos]) < 0)
+        if (compareTo(data[pos], data[parentPos]) < 0)
         {
             swap(pos, parentPos);
             bubbleUp(parentPos);
@@ -123,6 +162,15 @@ public class MinHeap<T extends Comparable<? super T>>
         }
         data[size++] = item;
         bubbleUp(size - 1);
+    }
+    
+    public T takeFirst()
+    {
+        T ret = topValue();
+        swap(0, size-1);
+        size--;
+        bubbleDown(0);
+        return ret;
     }
 
     private void heapify()
@@ -141,11 +189,11 @@ public class MinHeap<T extends Comparable<? super T>>
         {
             int leftPos = leftChildPos(pos);
             int rightPos = rightChildPos(pos);
-            if (leftPos < size && data[pos].compareTo(data[leftPos]) > 0)
+            if (leftPos < size && compareTo(data[pos], data[leftPos]) > 0)
             {
                 return false;
             }
-            if (rightPos < size && data[pos].compareTo(data[rightPos]) > 0)
+            if (rightPos < size && compareTo(data[pos], data[rightPos]) > 0)
             {
                 return false;
             }
@@ -153,7 +201,7 @@ public class MinHeap<T extends Comparable<? super T>>
         return true;
     }
 
-    private T topValue()
+    public T topValue()
     {
         return data[0];
     }
@@ -180,6 +228,38 @@ public class MinHeap<T extends Comparable<? super T>>
             ret[i] = rand.nextInt(1000000);
         }
         return ret;
+    }
+    
+    public static <T extends Comparable<T>> boolean isSorted(T[] arr)
+    {
+        boolean first = true;
+        T prevElem = null;
+        for(T elem : arr)
+        {
+            if (! first && elem.compareTo(prevElem) < 0)
+            {
+                return false;
+            }
+            first = false;
+            prevElem = elem;
+        }
+        return true;
+    }
+
+    public static <T extends Comparable<T>> boolean isSorted(T[] arr, Comparator<? super T> comparator)
+    {
+        boolean first = true;
+        T prevElem = null;
+        for(T elem : arr)
+        {
+            if (! first && comparator.compare(elem, prevElem) < 0)
+            {
+                return false;
+            }
+            first = false;
+            prevElem = elem;
+        }
+        return true;
     }
 
     public static void test01()
@@ -233,12 +313,83 @@ public class MinHeap<T extends Comparable<? super T>>
         System.out.println(Arrays.toString(mh.data));
         System.out.println(mh.topValue());
     }
+    
+    public static void test04(int numElements)
+    {
+        Integer[] arr = createArray(numElements);
+        long start, end = 0;
+        start = time();
+        MinHeap<Integer> mh = new MinHeap<Integer>(new Integer[] {});
+        for (Integer v : arr)
+        {
+            mh.insertItem(v);
+        }
+        Integer[] sorted = new Integer[arr.length];
+        int i = 0;
+        while(mh.size > 0)
+        {
+            sorted[i++] = mh.takeFirst();
+        }
+        end = time();
+        System.out.println(String.format("Time to sort = %d ms", (end-start)));
+        if (numElements <= 100)
+        {
+            System.out.println(Arrays.toString(arr));
+            System.out.println(Arrays.toString(sorted));
+        }
+        System.out.println(String.format("Original array sorted = %s, New Array Sorted = %s", isSorted(arr), isSorted(sorted)));
+    }
+
+    public static void test05(int numElements)
+    {
+        Integer[] arr = createArray(numElements);
+        long start, end = 0;
+        start = time();
+        MinHeap<Integer> mh = new MinHeap<Integer>(new Integer[] {}, new Comparator<Integer>() {
+
+            @Override
+            public int compare(Integer o1, Integer o2)
+            {
+                return o2 - o1;
+            }
+        });
+        for (Integer v : arr)
+        {
+            mh.insertItem(v);
+        }
+        Integer[] sorted = new Integer[arr.length];
+        int i = 0;
+        while(mh.size > 0)
+        {
+            sorted[i++] = mh.takeFirst();
+        }
+        end = time();
+        System.out.println(String.format("Time to sort = %d ms", (end-start)));
+        if (numElements <= 100)
+        {
+            System.out.println(Arrays.toString(arr));
+            System.out.println(Arrays.toString(sorted));
+        }
+        System.out.println(String.format("Original array sorted = %s, New Array Sorted = %s", 
+                isSorted(arr), 
+                isSorted(sorted, new Comparator<Integer>() {
+
+                    @Override
+                    public int compare(Integer o1, Integer o2)
+                    {
+                        return o2 - o1;
+                    }
+                })));
+    }
+
 
     public static void main(String[] args) throws Exception
     {
         // test01();
         // test02();
-        test03();
+        // test03();
+        test04(1000);
+        test05(10);
     }
 
 }
