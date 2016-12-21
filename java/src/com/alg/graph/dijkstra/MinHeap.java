@@ -125,6 +125,20 @@ public class MinHeap
         return v;
     }
     
+    public VertexScore getVertex(int vertex)
+    {
+        Integer pos = vertexPosition.get(vertex);
+        if (pos == null)
+        {
+            return null;
+        }
+        else
+        {
+            VertexScore v = heap[pos];
+            return v;
+        }
+    }
+    
     public VertexScore deleteVertex(int vertex)
     {
         Integer pos = vertexPosition.get(vertex);
