@@ -19,7 +19,7 @@ public class DijkstraHeap
         super();
         this.g = g;
         this.startNode = startNode;
-        process();
+        process2();
     }
     
     public void process()
@@ -62,6 +62,49 @@ public class DijkstraHeap
                     else
                     {
                         mh.insertItem(oldScore);
+                    }
+                }
+            }
+        }
+    }
+
+    public void process2()
+    {
+        shortestPaths = new HashMap<>();
+        shortestPathLengths = new HashMap<>();
+        shortestPathLengths.put(startNode, 0);
+        shortestPaths.put(startNode, new ArrayList<>());
+        MinHeap mh = new MinHeap();
+        HashSet<Integer> processed = new HashSet<>();
+        processed.add(startNode);
+        for (Edge e : g.nodesEdges.get(startNode))
+        {
+            VertexScore v = new VertexScore(startNode, e.to, e.distance);
+            mh.insertItem(v);
+        }
+        while (mh.getSize() > 0)
+        {
+            VertexScore newV = mh.deleteMin();
+            processed.add(newV.vertex);
+            shortestPathLengths.put(newV.vertex, newV.score);
+            @SuppressWarnings("unchecked")
+            ArrayList<Integer> startingPath = (ArrayList<Integer>) shortestPaths.get(newV.sourceVertex).clone();
+            startingPath.add(newV.vertex);
+            shortestPaths.put(newV.vertex, startingPath);
+            
+            // Now add the new paths from this node to the Min Heap
+            for (Edge e : g.nodesEdges.get(newV.vertex))
+            {
+                Integer toNode = e.to;
+                if (! processed.contains(e.to))
+                {
+                    // System.out.println("Edge: " + e);
+                    VertexScore oldScore = mh.getVertex(toNode);
+                    VertexScore newScore = new VertexScore(newV.vertex, toNode, newV.score + e.distance);
+                    if (oldScore == null || newScore.score < oldScore.score)
+                    {
+                        mh.deleteVertex(toNode);
+                        mh.insertItem(newScore);
                     }
                 }
             }
@@ -116,8 +159,14 @@ public class DijkstraHeap
     public static void test02(String fileName, int startNode, int... nodes) throws IOException
     {
         Graph g = Graph.readFromFile(fileName);
+        System.out.println(String.format("Graph loaded, nodes = %d, edges = %d", g.nodeCount(), g.edgeCount()));
+        long start, end = 0;
+        start = Calendar.getInstance().getTimeInMillis();
         DijkstraHeap dh = new DijkstraHeap(g, startNode);
+        end = Calendar.getInstance().getTimeInMillis();
+        System.out.println(String.format("Time to calculate = %d ms", (end-start)));
         System.out.println(dh.getShortestPathLengths(nodes));
+        // 50,41,48,55,51,36,42,46,59,65
     }
 
     public static void main(String[] args) throws Exception
@@ -126,7 +175,8 @@ public class DijkstraHeap
         // test01("C:/Users/rubandyopadhyay/Downloads/dijkstraData.txt", 1);
         long start, end;
         start = Calendar.getInstance().getTimeInMillis();
-        test02("C:/Users/rubandyopadhyay/Downloads/dijkstraData.txt", 1, 7,37,59,82,99,115,133,165,188,197);
+        // test02("C:/Users/rubandyopadhyay/Downloads/dijkstraData.txt", 1, 7,37,59,82,99,115,133,165,188,197);
+        test02("C:/Users/rubandyopadhyay/Downloads/largeGraph.txt", 1, 7,37,59,82,99,115,133,165,188,197);
         end = Calendar.getInstance().getTimeInMillis();
         System.out.println(String.format("Time to calculate = %d ms", (end-start)));
         // 2599,2610,2947,2052,2367,2399,2029,2442,2505,3068
