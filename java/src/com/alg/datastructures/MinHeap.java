@@ -15,14 +15,14 @@ public class MinHeap<T extends Comparable<? super T>>
     public MinHeap(T[] a)
     {
         size = 0;
-        data = (T[]) java.lang.reflect.Array.newInstance(a.getClass().getComponentType(), 2);
+        data = (T[]) java.lang.reflect.Array.newInstance(a.getClass().getComponentType(), 10000);
     }
 
     @SuppressWarnings("unchecked")
     public MinHeap(T[] a, Comparator<? super T> comparator)
     {
         size = 0;
-        data = (T[]) java.lang.reflect.Array.newInstance(a.getClass().getComponentType(), 2);
+        data = (T[]) java.lang.reflect.Array.newInstance(a.getClass().getComponentType(), 10000);
         this.comparator = comparator;
     }
     
