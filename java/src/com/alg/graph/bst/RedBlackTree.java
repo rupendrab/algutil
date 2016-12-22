@@ -30,6 +30,11 @@ public class RedBlackTree<T extends Comparable<? super T>>
     {
         return root;
     }
+    
+    public void setRoot(T root)
+    {
+        this.root = root;
+    }
 
     public RedBlackTree<T> getLeft()
     {
@@ -564,6 +569,7 @@ public class RedBlackTree<T extends Comparable<? super T>>
         }
     }
     
+    @SuppressWarnings("unchecked")
     public void rotateLeft(RedBlackTree<T> P)
     {
         RedBlackTree<T> N = P.right;
@@ -572,15 +578,43 @@ public class RedBlackTree<T extends Comparable<? super T>>
             return;
         }
         RedBlackTree<T> G = P.parent;
-        if (G == null)
-        {
-            return;
-        }
         RedBlackTree<T> POrig = P;
         RedBlackTree<T> NLeft = N.left;
-        G.left = N;
-        N.left = POrig;
-        POrig.right = NLeft;
+        System.out.println(String.format("N = %s, P = %s, G = %s", N.root, P.root, G == null ? null : G.root));
+        if (G != null)
+        {
+            G.setLeft(N);
+        }
+        System.out.println("POrig = " + POrig.root);
+        N.setLeft(POrig);
+        System.out.println(N.left.root);
+        POrig.setRight(NLeft);
+        // System.out.println(POrig);
+        System.out.println("N = " + N);
+        System.out.println(String.format("0. %s : %s : %s", N.left.root, N.root, N.right.root));
+        System.out.println(N.root);
+        System.out.println(this == N.left);
+        if (G == null)
+        {
+            System.out.println(String.format("1. %s : %s : %s", N.left.root, N.root, N.right.root));
+            N.setParent(null);
+            System.out.println("this = " + this);
+            System.out.println(N.left.root);
+            System.out.println(String.format("2. %s : %s : %s", N.left.root, N.root, N.right.root));
+            System.out.println(N.left.root);
+            // setRoot(null);
+            System.out.println(N.left.root);
+            System.out.println(String.format("3. %s : %s : %s", N.left.root, N.root, N.right.root));
+            this.setLeft(N.left);
+            System.out.println(String.format("4. %s : %s : %s", N.left.root, N.root, N.right.root));
+            this.setRight(N.right);
+            System.out.println(String.format("5. %s : %s : %s", N.left.root, N.root, N.right.root));
+            this.parent = null;
+            this.size = N.size;
+            System.out.println(String.format("6. %s : %s : %s", N.left.root, N.root, N.right.root));
+            System.out.println(String.format("7. %s : %s : %s", left.root, root, right.root));
+            // System.out.println("N = " + N);
+        }
     }
 
     public void rotateRight(RedBlackTree<T> P)
@@ -591,15 +625,14 @@ public class RedBlackTree<T extends Comparable<? super T>>
             return;
         }
         RedBlackTree<T> G = P.parent;
-        if (G == null)
-        {
-            return;
-        }
         RedBlackTree<T> POrig = P;
         RedBlackTree<T> NRight = N.right;
-        G.right = N;
-        N.right = POrig;
-        POrig.left = NRight;
+        if (G != null)
+        {
+            G.setRight(N);
+        }
+        N.setRight(POrig);
+        POrig.setLeft(NRight);
     }
     
     public RedBlackTree<T> insert(T elem)

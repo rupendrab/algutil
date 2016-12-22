@@ -8,9 +8,9 @@ public class TestRBTree
         for (int i=0; i<3; i++)
         {
             rbt.insert(i);
-            System.out.println(rbt);
+            // System.out.println(rbt);
         }
-        System.out.println(rbt.computeHeight());
+        // System.out.println(rbt.computeHeight());
         System.out.println(rbt.size);
     }
     
