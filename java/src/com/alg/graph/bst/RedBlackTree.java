@@ -10,6 +10,9 @@ public class RedBlackTree<T extends Comparable<? super T>>
     RedBlackTree<T> parent;
     int size;
     int color = 1; // 1 for Black, 0 for Red
+    boolean DEBUG = false;
+    int occurences = 1;
+    boolean colorAdjust = true;
     
     public RedBlackTree(T root)
     {
@@ -21,6 +24,34 @@ public class RedBlackTree<T extends Comparable<? super T>>
         }
     }
     
+    public boolean isDEBUG()
+    {
+        return DEBUG;
+    }
+
+    public void setDEBUG(boolean dEBUG)
+    {
+        DEBUG = dEBUG;
+    }
+    
+    public int getOccurences()
+    {
+        return occurences;
+    }
+
+    public void setOccurences(int occurences)
+    {
+        this.occurences = occurences;
+    }
+
+    public void printDebug(String str)
+    {
+        if (DEBUG)
+        {
+            System.out.println(str);
+        }
+    }
+
     public boolean isRootTree()
     {
         return parent == null;
@@ -279,7 +310,7 @@ public class RedBlackTree<T extends Comparable<? super T>>
         {
             currentPosition = left.size;
         }
-        if (currentPosition == pos)
+        if (pos >= currentPosition && pos < currentPosition + occurences)
         {
             return this;
         }
@@ -295,7 +326,7 @@ public class RedBlackTree<T extends Comparable<? super T>>
             }
             else
             {
-                return right.select(pos - currentPosition - 1);
+                return right.select(pos - currentPosition - occurences);
             }
         }
     }
@@ -419,11 +450,12 @@ public class RedBlackTree<T extends Comparable<? super T>>
     
     public RedBlackTree<T> uncle()
     {
-        if (parent == null)
+        RedBlackTree<T> G = grandParent();
+        if (G == null)
         {
             return null;
         }
-        return parent.otherChild(this);
+        return G.otherChild(parent);
     }
 
     private RedBlackTree<T> insertBST(T elem)
@@ -434,16 +466,26 @@ public class RedBlackTree<T extends Comparable<? super T>>
             root = elem;
             size = 1;
             color = 1;
+            occurences = 1;
+            this.colorAdjust = true;
             return this;
         }
         int cmp = compareTo(elem, root);
-        if (cmp <= 0) // If less or equal, choose the left subtree
+        if (cmp == 0) // If equal, just increment occurences
+        {
+            occurences += 1;
+            size += 1;
+            this.colorAdjust = false;
+            return this;
+        }
+        else if (cmp < 0) // If less choose the left subtree
         {
             if (left == null)
             {
                 RedBlackTree<T> left = new RedBlackTree<T>(elem);
                 this.setLeft(left);
                 size += 1;
+                left.colorAdjust = true;
                 return left;
             }
             else
@@ -459,6 +501,7 @@ public class RedBlackTree<T extends Comparable<? super T>>
                 RedBlackTree<T> right = new RedBlackTree<T>(elem);
                 this.setRight(right);
                 size += 1;
+                right.colorAdjust = true;
                 return right;
             }
             else
@@ -469,23 +512,24 @@ public class RedBlackTree<T extends Comparable<? super T>>
         }
     }
     
-    public void insertCase1(RedBlackTree<T> N)
+    public RedBlackTree<T> insertCase1(RedBlackTree<T> N)
     {
         if (N.isRootTree())
         {
             /*
              * Case 1: N is root node
              */
-            System.out.println("Case 1");
+            printDebug("Case 1");
             N.setColor(1);
+            return N;
         }
         else
         {
-            insertCase2(N);
+            return insertCase2(N);
         }
     }
     
-    public void insertCase2(RedBlackTree<T> N)
+    public RedBlackTree<T> insertCase2(RedBlackTree<T> N)
     {
         /*
          * Case 2: N's parent P is black
@@ -493,16 +537,16 @@ public class RedBlackTree<T extends Comparable<? super T>>
         RedBlackTree<T> P = N.parent;
         if (P.getColor() == 1)
         {
-            System.out.println("Case 2");
-            return;
+            printDebug("Case 2");
+            return this;
         }
         else
         {
-            insertCase3(N);
+            return insertCase3(N);
         }
     }
 
-    public void insertCase3(RedBlackTree<T> N)
+    public RedBlackTree<T> insertCase3(RedBlackTree<T> N)
     {
         /*
          * Case 3: N's parent(P) and uncle(U) are red
@@ -510,129 +554,162 @@ public class RedBlackTree<T extends Comparable<? super T>>
         RedBlackTree<T> P = N.parent;
         RedBlackTree<T> G = N.grandParent();
         RedBlackTree<T> U = N.uncle();
+        printDebug("Case 3 Parent: " + P.getRoot() + "-" + P.getColor());
+        if (U != null)
+        {
+            printDebug("Case 3 Uncle: " + U.getRoot() + "-" + U.getColor());
+        }
         
         if (P.getColor() == 0 && (U != null && U.getColor() == 0))
         {
-            System.out.println("Case 3");
+            printDebug("Case 3");
             P.setColor(1);
-            U.setColor(1);;
+            U.setColor(1);
             G.setColor(0);
-            insertCase1(G);
+            return insertCase1(G);
         }
         else
         {
-            insertCase4(N);
+            return insertCase4(N);
         }
     }
     
-    public void insertCase4(RedBlackTree<T> N)
+    public RedBlackTree<T> insertCase4(RedBlackTree<T> N)
     {
         /*
          * Case 4: parent(P) is Red but uncle(U) is black.
          *   Also, N is the right child of P and P is the left child of its parent G 
          *   Or, N is the left child of P and P is the right child of its parent G
          */
-        System.out.println("Case 4");
+        printDebug("Case 4");
         RedBlackTree<T> P = N.parent;
         RedBlackTree<T> G = N.grandParent();
         
         if ( N == P.right && P == G.left)
         {
-            System.out.println("Rotate Left in Case 4");
+            printDebug("Rotate Left in Case 4");
             rotateLeft(P);
             N = P;
         }
         else if ( N == P.left && P == G.right)
         {
-            System.out.println("Rotate Right in Case 4");
+            printDebug("Rotate Right in Case 4");
             rotateRight(P);
             N = P;
         }
-        insertCase5(N);
+        return insertCase5(N);
     }
 
-    public void insertCase5(RedBlackTree<T> N)
+    public RedBlackTree<T> insertCase5(RedBlackTree<T> N)
     {
-        System.out.println("Case 5");
+        printDebug("Case 5");
         RedBlackTree<T> G = N.grandParent();
         N.parent.setColor(1);
         G.setColor(0);
         if (N == N.parent.left)
         {
-            System.out.println("Rotate right in Case 5");
-            rotateRight(G);
+            printDebug("Rotate right in Case 5");
+            return rotateRight(G);
         }
         else
         {
-            System.out.println("Rotate left in Case 5");
-            rotateLeft(G);
+            printDebug("Rotate left in Case 5");
+            return rotateLeft(G);
         }
     }
     
-    @SuppressWarnings("unchecked")
-    public void rotateLeft(RedBlackTree<T> P)
+    public RedBlackTree<T> rotateLeft(RedBlackTree<T> P)
     {
         RedBlackTree<T> N = P.right;
         if (N == null)
         {
-            return;
+            return this;
         }
         RedBlackTree<T> G = P.parent;
         RedBlackTree<T> POrig = P;
         RedBlackTree<T> NLeft = N.left;
-        System.out.println(String.format("N = %s, P = %s, G = %s", N.root, P.root, G == null ? null : G.root));
+        printDebug(String.format("N = %s, P = %s, G = %s", N.root, P.root, G == null ? null : G.root));
         if (G != null)
         {
-            G.setLeft(N);
+            if (G.left == POrig)
+            {
+                G.setLeft(N);
+            }
+            else
+            {
+                G.setRight(N);
+            }
         }
-        System.out.println("POrig = " + POrig.root);
+        else
+        {
+            N.setParent(null);
+        }
         N.setLeft(POrig);
-        System.out.println(N.left.root);
         POrig.setRight(NLeft);
-        // System.out.println(POrig);
-        System.out.println("N = " + N);
-        System.out.println(String.format("0. %s : %s : %s", N.left.root, N.root, N.right.root));
-        System.out.println(N.root);
-        System.out.println(this == N.left);
+        if (N.left != null)
+        {
+            N.left.computeSize();
+        }
+        if (N.right != null)
+        {
+            N.right.computeSize();
+        }
+        N.computeSizeAllUpwards();
         if (G == null)
         {
-            System.out.println(String.format("1. %s : %s : %s", N.left.root, N.root, N.right.root));
-            N.setParent(null);
-            System.out.println("this = " + this);
-            System.out.println(N.left.root);
-            System.out.println(String.format("2. %s : %s : %s", N.left.root, N.root, N.right.root));
-            System.out.println(N.left.root);
-            // setRoot(null);
-            System.out.println(N.left.root);
-            System.out.println(String.format("3. %s : %s : %s", N.left.root, N.root, N.right.root));
-            this.setLeft(N.left);
-            System.out.println(String.format("4. %s : %s : %s", N.left.root, N.root, N.right.root));
-            this.setRight(N.right);
-            System.out.println(String.format("5. %s : %s : %s", N.left.root, N.root, N.right.root));
-            this.parent = null;
-            this.size = N.size;
-            System.out.println(String.format("6. %s : %s : %s", N.left.root, N.root, N.right.root));
-            System.out.println(String.format("7. %s : %s : %s", left.root, root, right.root));
-            // System.out.println("N = " + N);
+            return N;
+        }
+        else
+        {
+            return this;
         }
     }
 
-    public void rotateRight(RedBlackTree<T> P)
+    public RedBlackTree<T> rotateRight(RedBlackTree<T> P)
     {
-        RedBlackTree<T> N = P.right;
+        RedBlackTree<T> N = P.left;
         if (N == null)
         {
-            return;
+            return this;
         }
         RedBlackTree<T> G = P.parent;
         RedBlackTree<T> POrig = P;
         RedBlackTree<T> NRight = N.right;
+        printDebug(String.format("N = %s, P = %s, G = %s", N.root, P.root, G == null ? null : G.root));
         if (G != null)
         {
-            G.setRight(N);
+            if (G.left == POrig)
+            {
+                G.setLeft(N);
+            }
+            else
+            {
+                G.setRight(N);
+            }
+        }
+        else
+        {
+            N.setParent(null);
         }
         N.setRight(POrig);
         POrig.setLeft(NRight);
+        if (N.left != null)
+        {
+            N.left.computeSize();
+        }
+        if (N.right != null)
+        {
+            N.right.computeSize();
+        }
+        N.computeSizeAllUpwards();
+        if (G == null)
+        {
+            return N;
+        }
+        else
+        {
+            return this;
+        }
     }
     
     public RedBlackTree<T> insert(T elem)
@@ -642,14 +719,39 @@ public class RedBlackTree<T extends Comparable<? super T>>
         /* 
          * Set N's color to Red
          */
-        N.setColor(0);
-        System.out.println("*** " + this);
-        
-        insertCase1(N);
-        
-        return N;
+        if (N.colorAdjust)
+        {
+            N.setColor(0);
+            if (DEBUG)
+            {
+                printDebug("*** " + this);
+            }
+            
+            N = insertCase1(N);
+            return N;
+        }
+        else
+        {
+            return this;
+        }
     }
-    
+ 
+    private void computeSize()
+    {
+        this.size = occurences + (this.left == null ? 0 : this.left.size) + (this.right == null ? 0 : this.right.size);
+    }
+
+    private void computeSizeAllUpwards()
+    {
+        computeSize();
+        RedBlackTree<T> p = this.parent;
+        while (p != null)
+        {
+            p.computeSize();
+            p = p.parent;
+        }
+    }
+
     public int computeHeight()
     {
         int leftHeight = 0;
@@ -684,6 +786,85 @@ public class RedBlackTree<T extends Comparable<? super T>>
         sb.append("]");
         return sb.toString();
     }
+    
+    public int getLeftSize()
+    {
+        return left == null ? 0 : left.size;
+    }
+    
+    public int getRightSize()
+    {
+        return right == null ? 0 : right.size;
+    }
 
+    public boolean checkTree()
+    {
+        if (root == null && size == 0 && getLeftSize() == 0 && getRightSize() == 0)
+        {
+            return true;
+        }
+        if (size != getLeftSize() + occurences + getRightSize())
+        {
+            // System.out.println("Failed Size check at " + root);
+            // System.out.println(String.format("Size = %d, left = %d, right = %d", getLeftSize(), getRightSize()));
+            return false;
+        }
+        if (left != null)
+        {
+            if (compareTo(left.root, root) > 0)
+            {
+                // System.out.println(String.format("Value = %s, left = %s", root, left.root));
+                return false;
+            }
+            if (this != left.parent)
+            {
+                System.out.println(String.format("Left Child mismatch: Value = %s, left = %s", root, left.root));
+                return false;
+            }
+            if (! left.checkTree())
+            {
+                return false;
+            }
+        }
+        if (right != null)
+        {
+            if (compareTo(right.root, root) <= 0)
+            {
+                // System.out.println(String.format("Value = %s, right = %s", root, right.root));
+                return false;
+            }
+            if (this != right.parent)
+            {
+                System.out.println(String.format("Right Child mismatch: Value = %s, left = %s", root, right.root));
+                return false;
+            }
+            if (! right.checkTree())
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    private boolean isBalanced(RedBlackTree<T> x, int black) 
+    {
+        if (x == null) return black == 0;
+        if (x.color == 1) black--;
+        return isBalanced(x.left, black) && isBalanced(x.right, black);
+    }
+    
+    public boolean isBalanced() 
+    { 
+        int black = 0;     // number of black links on path from root to min
+        RedBlackTree<T> x = this;
+        while (x != null) 
+        {
+            if (x.color == 1) black++;
+            x = x.left;
+        }
+        return isBalanced(this, black);
+    }
+    
+    
 
 }
