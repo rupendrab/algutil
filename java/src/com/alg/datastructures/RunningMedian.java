@@ -12,6 +12,7 @@ import java.util.Comparator;
 import java.util.Random;
 
 import com.alg.graph.bst.BinarySearchTree;
+import com.alg.graph.bst.RedBlackTree;
 
 public class RunningMedian<T extends Comparable<? super T>>
 {
@@ -165,15 +166,51 @@ public class RunningMedian<T extends Comparable<? super T>>
         reader.close();
         end = time();
         System.out.println(String.format("Time elapsed in test03 = %d ms", (end - start)));
-        System.out.println(bst.computeHeight());
+        System.out.println("Tree height = " + bst.computeHeight());
+        return (int) (sumOfMedians % 10000);
+    }
+
+    public static int test04(String fileName) throws IOException
+    {
+        long start, end = 0;
+        start = time();
+        RedBlackTree<Integer> bst = new RedBlackTree<Integer>(null);
+        BufferedReader reader = new BufferedReader(new FileReader(new File(fileName)));
+        String line = null;
+        int lineNo = 0;
+        long sumOfMedians = 0;
+        while((line = reader.readLine()) != null)
+        {
+            lineNo++;
+            try
+            {
+                Integer val = Integer.parseInt(line);
+                bst = bst.insert(val);
+                Integer median = bst.median();
+                sumOfMedians += median;
+            }
+            catch (NumberFormatException ne)
+            {
+                System.err.println(String.format("Invalid Integer at line %d = %s", lineNo, line));
+            }
+        }
+        reader.close();
+        end = time();
+        System.out.println(String.format("Time elapsed in test03 = %d ms", (end - start)));
+        System.out.println("Tree Height = " + bst.computeHeight());
         return (int) (sumOfMedians % 10000);
     }
 
     public static void main(String[] args) throws Exception
     {
         // test01();
-        System.out.println(test02("C:\\Users\\rubandyopadhyay\\Downloads\\Median.txt"));
-        System.out.println(test03("C:\\Users\\rubandyopadhyay\\Downloads\\Median.txt"));
+        // String fileName = "C:\\Users\\rubandyopadhyay\\Downloads\\Median.txt";
+        // String fileName = "C:\\Users\\rubandyopadhyay\\Downloads\\Median_100K.txt";
+        // String fileName = "C:\\Users\\rubandyopadhyay\\Downloads\\Median_1M.txt";
+        String fileName = "C:\\Users\\rubandyopadhyay\\Downloads\\Median_10M.txt";
+        System.out.println(test02(fileName));
+        System.out.println(test03(fileName));
+        System.out.println(test04(fileName));
     }
     
 }
