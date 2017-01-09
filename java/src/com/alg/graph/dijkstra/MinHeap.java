@@ -68,6 +68,7 @@ public class MinHeap
     
     public void percolateDown(int pos)
     {
+        // System.out.println("Percolatwdown pos = " + pos);
         while (pos <= size/2)
         {
             // System.out.println("percolateDown: " + Arrays.toString(heap));
@@ -80,7 +81,9 @@ public class MinHeap
             {
                 childPos++;
             }
-            if (heap[pos].compareTo(heap[childPos]) > 1)
+            // System.out.println("  PercolateDown childPos = " + childPos);
+            // System.out.println(heap[pos] + " *** " + heap[childPos] + " *** " + heap[pos].compareTo(heap[childPos]));
+            if (heap[pos].compareTo(heap[childPos]) > 0)
             {
                 exchange(pos, childPos);
                 pos = childPos;
@@ -104,6 +107,7 @@ public class MinHeap
             }
         }
     }
+    
     public int insertItem(VertexScore value)
     {
         if (size == heap.length - 1)
@@ -150,6 +154,7 @@ public class MinHeap
         exchange(pos, size);
         size--;
         percolateDown(pos);
+        percolateUp(pos);
         return v;
     }
 
@@ -166,6 +171,38 @@ public class MinHeap
     public VertexScore getValue()
     {
         return heap[K];
+    }
+    
+    public boolean isValid()
+    {
+        for (int i=1; i<=size/2; i++)
+        {
+            VertexScore p = heap[i];
+            if (2 * i <= size)
+            {
+                VertexScore c = heap[2 * i];
+                if (p.compareTo(c) > 0)
+                {
+                    System.out.println("Error: Parent = " + p + ", Child = " + c);
+                    return false;
+                }
+            }
+            if (2 * i + 1 <= size)
+            {
+                VertexScore c = heap[2 * i + 1];
+                if (p.compareTo(c) > 0)
+                {
+                    System.out.println("Error: Parent = " + p + ", Child = " + c);
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+    
+    public VertexScore[] getArray()
+    {
+        return heap;
     }
     
     public static void test01()
