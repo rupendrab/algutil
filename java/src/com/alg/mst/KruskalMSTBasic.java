@@ -72,12 +72,12 @@ public class KruskalMSTBasic
         Edge prevEdge = null;
         for (Edge e : edges)
         {
-            if (i> 0 && i % 2 == 0 && e.isSame(prevEdge))
+            i++;
+            if (i> 1 && i % 2 == 0 && e.isSame(prevEdge))
             {
                 continue;
             }
             edgesFinal.add(e);
-            i++;
             prevEdge = e;
         }
         return edgesFinal;
