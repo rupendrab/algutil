@@ -2,10 +2,7 @@ package com.alg.mst;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.Hashtable;
-import java.util.Map.Entry;
 
 import com.alg.graph.dijkstra.Edge;
 import com.alg.graph.dijkstra.Graph;
@@ -53,6 +50,38 @@ public class KCluster
         return 0;
     }
     
+    public int computeClusters(int maxMergeLength)
+    {
+        KruskalMSTBasic krsMST = new KruskalMSTBasic(g);
+        uf = krsMST.getInitialUF();
+        ArrayList<Edge> edges = krsMST.edgesSortedByLength();
+        int clusters = uf.size();
+        System.out.println("Initial cluster size = " + uf.size());
+        System.out.println("Number of edges = " + edges.size());
+        for (Edge edge : edges)
+        {
+            if (edge.getDistance() > maxMergeLength)
+            {
+                System.out.println("Max length exceeded!!");
+                break;
+            }
+            Integer from = edge.getFrom();
+            Integer to = edge.getTo();
+            UnionFindVertex<Integer> fromVertex = uf.get(from);
+            UnionFindVertex<Integer> toVertex = uf.get(to);
+            if (fromVertex.isConnected(toVertex))
+            {
+                continue;
+            }
+            else
+            {
+                fromVertex.union(toVertex);
+                clusters -= 1;
+            }
+        }
+        return clusters;
+    }
+    
     public static void test01(String fileName, int K) throws IOException
     {
         Graph g = Graph.readFromFileFormatTwo(fileName, 1);
@@ -64,10 +93,12 @@ public class KCluster
     
     public static void main(String[] args) throws Exception
     {
-        test01("/Users/rupen/Documents/Coursera/Algorithms/Course3/clustering1.txt", 4);
+        test01("C:\\Users\\rubandyopadhyay\\Downloads\\clustering1.txt", 4);
+        /*
         test01("/Users/rupen/Documents/Coursera/Algorithms/Course3/clustering_test_01.txt", 2);
         test01("/Users/rupen/Documents/Coursera/Algorithms/Course3/clustering_test_01.txt", 3);
         test01("/Users/rupen/Documents/Coursera/Algorithms/Course3/clustering_test_01.txt", 4);
+        */
     }
 
 }
