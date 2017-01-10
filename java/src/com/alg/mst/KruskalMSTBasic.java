@@ -21,7 +21,7 @@ public class KruskalMSTBasic
         this.g = g;
     }
     
-    private Hashtable<Integer, UnionFindVertex<Integer>> getInitialUF()
+    public Hashtable<Integer, UnionFindVertex<Integer>> getInitialUF()
     {
         Hashtable<Integer, UnionFindVertex<Integer>> vertices = new Hashtable<>();
         for (Integer node : g.getNodes())
