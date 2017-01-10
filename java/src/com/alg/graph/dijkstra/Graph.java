@@ -59,6 +59,11 @@ public class Graph
         edges.add(e);
     }
     
+    public void addNode(Integer n)
+    {
+        nodes.add(n);
+    }
+    
     public void addEdge(Edge e)
     {
         nodes.add(e.getFrom());
