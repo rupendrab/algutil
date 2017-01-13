@@ -3,13 +3,32 @@ package com.alg.datastructures;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Random;
 
-public class MinHeap<T extends Comparable<? super T>>
+public class MinHeap<T extends Comparable<? super T>> implements Iterable<T>
 {
     T[] data;
     int size;
     Comparator<? super T> comparator;
+    HashMap<T, Integer> positions = new HashMap<>();
+
+    public HashMap<T, Integer> getPositions()
+    {
+        return positions;
+    }
+    
+    // Get the actual value from a shadow object which only has the key values set such the equals method matches
+    public T getActualValue(T shadow)
+    {
+        Integer pos = positions.get(shadow);
+        if (pos == null)
+        {
+            return null;
+        }
+        return data[pos];
+    }
 
     @SuppressWarnings("unchecked")
     public MinHeap(T[] a)
@@ -68,6 +87,8 @@ public class MinHeap<T extends Comparable<? super T>>
 
     private void swap(int i, int j)
     {
+        positions.put(data[i], j);
+        positions.put(data[j], i);
         T temp = data[i];
         data[i] = data[j];
         data[j] = temp;
@@ -129,6 +150,7 @@ public class MinHeap<T extends Comparable<? super T>>
             if (compareTo(data[pos], data[leftPos]) > 0)
             {
                 swap(pos, leftPos);
+                bubbleDown(leftPos);
             }
         }
         else if (hasRight)
@@ -136,6 +158,7 @@ public class MinHeap<T extends Comparable<? super T>>
             if (compareTo(data[pos], data[rightPos]) > 0)
             {
                 swap(pos, rightPos);
+                bubbleDown(rightPos);
             }
         }
     }
@@ -154,18 +177,45 @@ public class MinHeap<T extends Comparable<? super T>>
         }
     }
 
+    public void check()
+    {
+        for (int i=1; i<=size; i++)
+        {
+            T item = data[i];
+            int pos = positions.get(item);
+            if (i != pos)
+            {
+                System.err.println("Failed at position " + i);
+            }
+        }
+    }
+    
     public void insertItem(T item)
     {
         if (size == data.length - 1)
         {
             doubleSize();
         }
+        positions.put(item, size);
         data[size++] = item;
         bubbleUp(size - 1);
     }
     
+    public T first()
+    {
+        if (size == 0)
+        {
+            return null;
+        }
+        return data[0];
+    }
+    
     public T takeFirst()
     {
+        if (size == 0)
+        {
+            return null;
+        }
         T ret = topValue();
         swap(0, size-1);
         size--;
@@ -173,6 +223,24 @@ public class MinHeap<T extends Comparable<? super T>>
         return ret;
     }
 
+    public T deleteItem(T item)
+    {
+        if (size == 0)
+        {
+            return null;
+        }
+        Integer pos = positions.get(item);
+        if (pos == null)
+        {
+            return null;
+        }
+        swap(pos, size-1);
+        size--;
+        bubbleDown(pos);
+        bubbleUp(pos);
+        return item;
+    }
+    
     private void heapify()
     {
         int startPos = parentPos(size - 1);
@@ -219,6 +287,42 @@ public class MinHeap<T extends Comparable<? super T>>
         return (T[]) java.lang.reflect.Array.newInstance(data.getClass().getComponentType(), (size+1) * times);
     }
 
+    @Override
+    public Iterator<T> iterator()
+    {
+        Iterator<T> it = new Iterator<T>() {
+            private int currentIndex = 0;
+            
+            @Override
+            public boolean hasNext()
+            {
+                return currentIndex < size;
+            }
+
+            @Override
+            public T next()
+            {
+                return data[currentIndex++];
+            }
+        };
+        
+        return it;
+    }
+    
+    public void printData()
+    {
+        System.out.print("[");
+        for (int i=0; i<size; i++)
+        {
+            if (i > 0)
+            {
+                System.out.print(", ");
+            }
+            System.out.print(data[i]);
+        }
+        System.out.println("]");
+    }
+    
     public static Integer[] createArray(int arrayLength)
     {
         Integer[] ret = new Integer[arrayLength];
@@ -261,7 +365,7 @@ public class MinHeap<T extends Comparable<? super T>>
         }
         return true;
     }
-
+    
     public static void test01()
     {
         Integer[] data = { 3, 4, 5, 6, 9, 10, 5, 5, 4, 11, 2, 3, 4, 5, 6, 7 };
@@ -386,10 +490,10 @@ public class MinHeap<T extends Comparable<? super T>>
     public static void main(String[] args) throws Exception
     {
         // test01();
-        // test02();
+        test02();
         // test03();
-        test04(1000);
-        test05(10);
+        // test04(1000);
+        // test05(10);
     }
 
 }
