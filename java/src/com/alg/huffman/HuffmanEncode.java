@@ -9,6 +9,8 @@ import java.util.Comparator;
 import java.util.Hashtable;
 import java.util.LinkedList;
 
+import com.alg.datastructures.MinHeap;
+
 public class HuffmanEncode
 {
     Hashtable<Integer, Integer> characterFrequency = new Hashtable<>();
@@ -29,6 +31,13 @@ public class HuffmanEncode
         computeCharacterFrequency();
         rootNode = computeTree();        
     }
+    
+    public HuffmanEncode(Hashtable<Integer, Integer> characterFrequency)
+    {
+        this.characterFrequency = characterFrequency;
+        sortCharacters();
+        rootNode = computeTree();
+    }
 
     public void computeCharacterFrequency() throws IOException
     {
@@ -48,13 +57,18 @@ public class HuffmanEncode
             }
         }
         reader.close();
+        sortCharacters();
+    }
+    
+    public void sortCharacters()
+    {
         charactersOrderedByFrequency = new ArrayList<>(characterFrequency.keySet());
         Collections.sort(charactersOrderedByFrequency, new Comparator<Integer>() {
 
             @Override
             public int compare(Integer ch1, Integer ch2)
             {
-                return characterFrequency.get(ch2) - characterFrequency.get(ch1);
+                return characterFrequency.get(ch1) - characterFrequency.get(ch2);
             }
         });   
     }
@@ -85,6 +99,33 @@ public class HuffmanEncode
         }
     }
     
+    public HuffmanNode getMinimumHeap(LinkedList<Integer> nodes, MinHeap<HuffmanNode> mergedNodes)
+    {
+        Integer bestNode = nodes.peek();
+        // System.out.println(String.format("Best Node: %d, weight = %d", bestNode, characterFrequency.get(bestNode)));
+        int weightOfBestNode = 0;
+        if (bestNode != null)
+        {
+            weightOfBestNode = characterFrequency.get(bestNode);
+        }
+        HuffmanNode bestMergedNode = mergedNodes.first();
+        if (bestNode == null)
+        {
+            mergedNodes.takeFirst();
+            return bestMergedNode;
+        }
+        else if (bestMergedNode == null || weightOfBestNode <= bestMergedNode.weight)
+        {
+            nodes.poll();
+            return new HuffmanNode(bestNode, weightOfBestNode);
+        }
+        else
+        {
+            mergedNodes.takeFirst();
+            return bestMergedNode;
+        }
+    }
+    
     public HuffmanNode computeTree()
     {
         LinkedList<Integer> nodes = new LinkedList<>(charactersOrderedByFrequency);
@@ -103,6 +144,28 @@ public class HuffmanEncode
             mergedNodes.add(root);
             first = getMinimum(nodes, mergedNodes);
             second = getMinimum(nodes, mergedNodes);
+        }
+        return root;
+    }
+    
+    public HuffmanNode computeTreeHeap()
+    {
+        LinkedList<Integer> nodes = new LinkedList<>(charactersOrderedByFrequency);
+        MinHeap<HuffmanNode> mergedNodes = new MinHeap<>(new HuffmanNode[] {});
+        if (nodes.size() == 1)
+        {
+            Integer ch = nodes.peek();
+            return new HuffmanNode(ch, characterFrequency.get(ch));
+        }
+        HuffmanNode first = getMinimumHeap(nodes, mergedNodes);
+        HuffmanNode second = getMinimumHeap(nodes, mergedNodes);
+        HuffmanNode root = null;
+        while (first != null && second != null)
+        {
+            root = first.merge(second);
+            mergedNodes.insertItem(root);
+            first = getMinimumHeap(nodes, mergedNodes);
+            second = getMinimumHeap(nodes, mergedNodes);
         }
         return root;
     }
