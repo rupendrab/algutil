@@ -5,7 +5,7 @@ import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashSet;
 
-public class HuffmanNode
+public class HuffmanNode implements Comparable<HuffmanNode>
 {
     HashSet<Integer> nodes = new HashSet<>();
     HuffmanNode left;
@@ -241,5 +241,11 @@ public class HuffmanNode
     {
         // test01();
         test02();
+    }
+
+    @Override
+    public int compareTo(HuffmanNode o)
+    {
+        return weight - o.weight;
     }
 }
