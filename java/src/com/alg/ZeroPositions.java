@@ -13,12 +13,12 @@ public class ZeroPositions implements Comparable<ZeroPositions>
         this.index = index;
     }
     
-    public boolean addZeroPosition(int subposition)
+    public boolean addZeroPosition(Integer subposition)
     {
         return subIndices.add(subposition);
     }
     
-    public boolean deleteZeroPosition(int subposition)
+    public boolean deleteZeroPosition(Integer subposition)
     {
         return subIndices.remove(subposition);
     }

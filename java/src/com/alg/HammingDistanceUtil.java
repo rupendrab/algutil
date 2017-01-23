@@ -56,6 +56,60 @@ public class HammingDistanceUtil
         return val;
     }
     
+    public static ArrayList<Integer> insertOne(ArrayList<Integer> orig, Integer value, int pos)
+    {
+        ArrayList<Integer> ret = new ArrayList<>(orig.size() + 1);
+        int i = 0;
+        for (Integer val : orig)
+        {
+            if (i == pos)
+            {
+                ret.add(value);
+            }
+            ret.add(val);
+            i++;
+        }
+        if (pos == orig.size())
+        {
+            ret.add(value);
+        }
+        return ret;
+    }
+    
+    public static ArrayList<ArrayList<Integer>> permutations(int startIndex, int endIndex, int groupSize)
+    {
+        System.out.println(String.format("%d to %d: %d", startIndex, endIndex, groupSize));
+        if (groupSize == 0)
+        {
+            return new ArrayList<ArrayList<Integer>>();
+        }
+        else if (groupSize == 1)
+        {
+            ArrayList<ArrayList<Integer>> ret = new ArrayList<>();
+            for (int i = startIndex; i<endIndex; i++)
+            {
+                ArrayList<Integer> data = new ArrayList<>();
+                data.add(i);
+                ret.add(data);
+            }
+            System.out.println("Returning: " + ret);
+            return ret;
+        }
+        else
+        {
+            ArrayList<ArrayList<Integer>> ret = new ArrayList<>();
+            for (int i=startIndex; i<endIndex; i++)
+            {
+                for (ArrayList<Integer> sub : permutations(startIndex+1, endIndex, groupSize-1))
+                {
+                    ret.add(insertOne(sub, i, 0));
+                }
+            }
+            System.out.println("Returning: " + ret);
+            return ret;
+        }
+    }
+    
     public static ArrayList<ArrayList<Integer>> combinations(int startIndex, int endIndex, int groupSize)
     {
         if (groupSize == 0)
@@ -180,6 +234,23 @@ public class HammingDistanceUtil
         System.out.println(Integer.toBinaryString(p1 ^ p2));
     }
     
+    public static void test02()
+    {
+        ArrayList<Integer> data = new ArrayList();
+        data.add(1);
+        data.add(2);
+        data.add(3);
+        for (int i=0; i<=data.size(); i++)
+        {
+            System.out.println(insertOne(data, 100, i));
+        }
+    }
+    
+    public static void test03()
+    {
+        System.out.println(permutations(0, 3, 3));
+    }
+    
     public static void main(String[] args) throws Exception
     {
         // test01(511, 512);
@@ -189,7 +260,9 @@ public class HammingDistanceUtil
         // HashSet<Integer> pts = pointsAtDistance(24, 0, 5);
         // System.out.println(pts.size());
         // System.out.println(pointsAtDistance(24, 0, 4).size());
-        System.out.println(pointsAtDistance(24, 0, 8).size());
+        // System.out.println(pointsAtDistance(24, 0, 8).size());
+        // test02();
+        test03();
     }
 
 }

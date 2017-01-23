@@ -5,9 +5,11 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 
@@ -289,6 +291,12 @@ public class Hungarian
         if (zp.getSize() == 0)
         {
             unassignableRows.add(zp.getIndex());
+            if (DEBUG)
+            {
+                System.out.println("Assigned Rows = " + assignedRows);
+                rowZero.printData();
+                colZero.printData();
+            }
             return;
         }
         int row = zp.index;
@@ -308,6 +316,10 @@ public class Hungarian
                     ArrayList<Integer> rowsInv = new ArrayList<Integer>(rowsToInvalidate);
                     for (Integer otherrow : rowsInv)
                     {
+                        if (DEBUG)
+                        {
+                            System.out.println(String.format("  Dropping %d, %d", otherrow, column));
+                        }
                         addToCrossedOutZeros(crossedOutZeros, otherrow, column);
                         dropZeroFromColumnHeap(otherrow, column);
                         dropZeroFromRowHeap(otherrow, column);
@@ -342,6 +354,12 @@ public class Hungarian
         if (zp.getSize() == 0)
         {
             unassignableColumns.add(zp.getIndex());
+            if (DEBUG)
+            {
+                System.out.println("Assigned Rows = " + assignedRows);
+                rowZero.printData();
+                colZero.printData();
+            }
             return;
         }
         int column = zp.index;
@@ -486,8 +504,16 @@ public class Hungarian
         {
             colZero.deleteItem(columnZeroData);
         }
+        if (DEBUG)
+        {
+            System.out.println("  dropZeroFromColumnHeap, columnZeroOrig = " + columnZeroData);
+        }
         columnZeroData.deleteZeroPosition(row);
         colZero.insertItem(columnZeroData);
+        if (DEBUG)
+        {
+            System.out.println("  dropZeroFromColumnHeap, columnZeroNew = " + columnZeroData);
+        }
     }
     
     public void addZero(Hashtable<Integer, HashSet<Integer>> zeros, int row, int column)
@@ -573,7 +599,10 @@ public class Hungarian
             }
             // Step 2. For all new marked rows, add columns lines where there is a zero in the row
             
-            System.out.println("Newly marked rows = " + markedRowsNew);
+            if (DEBUG)
+            {
+                System.out.println("Newly marked rows = " + markedRowsNew);
+            }
             markedColumnsNew = new TreeSet<>();
             for (int row : markedRowsNew)
             {
@@ -594,7 +623,10 @@ public class Hungarian
             
             // Step 3. For all new marked columns, mark rows with assigned zeros
             
-            System.out.println("Newly marked columns = " + markedColumnsNew);
+            if (DEBUG)
+            {
+                System.out.println("Newly marked columns = " + markedColumnsNew);
+            }
             markedRowsNew = new TreeSet<>();
             for (int column : markedColumnsNew)
             {
@@ -627,7 +659,78 @@ public class Hungarian
         
     }
     
-    public boolean solve()
+    public void createAdditionalZeros(int[][] working, TreeSet<Integer> unmarkedRows, TreeSet<Integer> markedColumns)
+    {
+        int minValue = Integer.MAX_VALUE;
+        int rows = working.length;
+        int columns = working[0].length;
+        ArrayList<int[]> doubleCoveredCells = new ArrayList<>();
+        ArrayList<int[]> uncoveredCells = new ArrayList<>();
+        
+        // Find uncovered cells, double covered cells and minimum of uncovered cells
+        for (int row=0; row<rows; row++)
+        {
+            boolean rowSelected = false; 
+            if (unmarkedRows.contains(row))
+            {
+                rowSelected = true;
+            }
+            for (int column=0; column<columns; column++)
+            {
+                boolean columnSelected = false;
+                if (markedColumns.contains(column))
+                {
+                    columnSelected = true;
+                }
+                if (rowSelected && columnSelected)
+                {
+                    doubleCoveredCells.add(new int[] {row, column});
+                }
+                if (! rowSelected && ! columnSelected)
+                {
+                    uncoveredCells.add(new int[] {row, column});
+                    if (working[row][column] < minValue)
+                    {
+                        minValue = working[row][column];
+                    }
+                }
+            }
+        }
+        
+        // Subtract minimum from uncovered cells
+        for (int[] toSubtract : uncoveredCells)
+        {
+            working[toSubtract[0]][toSubtract[1]] -= minValue;
+        }
+        
+        // Add minimum to double covered cells
+        for (int[] toAdd : doubleCoveredCells)
+        {
+            working[toAdd[0]][toAdd[1]] += minValue;
+        }
+
+    }
+    
+    public void rebuildHeaps(int[][] working)
+    {
+        rowZero = new MinHeap<>(new ZeroPositions[] {});
+        colZero = new MinHeap<>(new ZeroPositions[] {});
+        int rows = working.length;
+        int columns = working[0].length;
+        for (int row=0; row<rows; row++)
+        {
+            for (int column=0; column<columns; column++)
+            {
+                if (working[row][column] == 0)
+                {
+                    addZeroToRowHeap(row, column);
+                    addZeroToColumnHeap(row, column);
+                }
+            }
+        }
+    }
+    
+    public Hashtable<Integer, Integer> solve()
     {
         int[][] working = copy(matrix);
         Hashtable<Integer, HashSet<Integer>> zeros = new Hashtable<>();
@@ -637,16 +740,102 @@ public class Hungarian
         Hashtable<Integer, HashSet<Integer>> crossedOutZeros = new Hashtable<>();
         HashSet<Integer> unassignableRows = new HashSet<>();
         HashSet<Integer> unassignableColumns = new HashSet<>();
-        assignTask(working, assignedRows, crossedOutZeros, unassignableRows, unassignableColumns);
-        print(working);
-        System.out.println("Assigned Rows = " + assignedRows);
-        System.out.println("Crossed out zeros = " + crossedOutZeros);
-        TreeSet<Integer> unmarkedRows = new TreeSet<>();
-        TreeSet<Integer> markedColumns = new TreeSet<>();
-        drawLines(working, assignedRows, unmarkedRows, markedColumns);
-        System.out.println("Row Lines = " + unmarkedRows);
-        System.out.println("Column Lines = " + markedColumns);
-        return (assignedRows.size() == working.length);
+        boolean complete = false;
+        while (! complete)
+        {
+            assignTask(working, assignedRows, crossedOutZeros, unassignableRows, unassignableColumns);
+            if (DEBUG)
+            {
+                print(working);
+                System.out.println("Assigned Rows = " + assignedRows);
+                System.out.println("Crossed out zeros = " + crossedOutZeros);
+            }
+            TreeSet<Integer> unmarkedRows = new TreeSet<>();
+            TreeSet<Integer> markedColumns = new TreeSet<>();
+            drawLines(working, assignedRows, unmarkedRows, markedColumns);
+            if (DEBUG)
+            {
+                System.out.println("Row Lines = " + unmarkedRows);
+                System.out.println("Column Lines = " + markedColumns);
+            }
+            createAdditionalZeros(working, unmarkedRows, markedColumns);
+            if (DEBUG)
+            {
+                System.out.println("Aftre creating additional zeros...");
+                print(working);
+            }
+            rebuildHeaps(working);
+            assignedRows = new Hashtable<>();
+            crossedOutZeros = new Hashtable<>();
+            unassignableRows = new HashSet<>();
+            unassignableColumns = new HashSet<>();
+            assignTask(working, assignedRows, crossedOutZeros, unassignableRows, unassignableColumns);
+            if (DEBUG)
+            {
+                System.out.println("Assigned Rows = " + assignedRows);
+            }
+            complete = (assignedRows.size() == working.length);
+        }
+        return assignedRows;
+    }
+    
+    public ArrayList<Integer> assignments(Hashtable<Integer, Integer> assignedRows)
+    {
+        ArrayList<Integer> rows = new ArrayList<Integer>(assignedRows.keySet());
+        Collections.sort(rows);
+        ArrayList<Integer> assignments = new ArrayList<>();
+        for (int row : rows)
+        {
+            assignments.add(matrix[row][assignedRows.get(row)]);
+        }
+        return assignments;
+    }
+    
+    public int totalCost(ArrayList<Integer> assignments)
+    {
+        int totalCost = 0;
+        for (int cost : assignments)
+        {
+            totalCost += cost;
+        }
+        return totalCost;
+    }
+    
+    public int totalCostByIndices(ArrayList<Integer> indices)
+    {
+        int totalCost = 0;
+        for (int row=0; row<indices.size(); row++)
+        {
+            totalCost += matrix[row][indices.get(row)];
+        }
+        return totalCost;
+    }
+    
+    public ArrayList<Integer> bruteForce()
+    {
+        int tasks = matrix.length;
+        int i = 0;
+        int minCost = 0;
+        int noCombinations = 0;
+        ArrayList<Integer> solution = null;
+        for (ArrayList<Integer> possibleSolution : HammingDistanceUtil.combinations(0, tasks, tasks))
+        {
+            noCombinations++;
+            int cost = totalCostByIndices(possibleSolution);
+            if (i == 0)
+            {
+                minCost = cost;
+                System.out.println(possibleSolution);
+            }
+            else if (cost < minCost)
+            {
+                minCost = cost;
+                solution = possibleSolution;
+            }
+        }
+        System.out.println("Min cost = " + minCost);
+        System.out.println("Number of combinations tried = " + noCombinations);
+        return solution;
     }
     
     public static void test01(String fileName) throws IOException
@@ -660,29 +849,32 @@ public class Hungarian
         hungarian.print(sm);
     }
     
+    public static long time()
+    {
+        return Calendar.getInstance().getTimeInMillis();
+    }
+    
     public static void test02(String fileName, int matrixNumber) throws IOException
     {
         Hungarian hungarian = new Hungarian(fileName, matrixNumber);
-        hungarian.solve();
-        /*
-        ZeroPositions x = null;
-        System.out.println("Size of heap = " + hungarian.rowZero.getSize());
-        while ((x = hungarian.rowZero.takeFirst()) != null)
-        {
-            System.out.println(x);
-        }
-        System.out.println("Size of heap = " + hungarian.colZero.getSize());
-        while ((x = hungarian.colZero.takeFirst()) != null)
-        {
-            System.out.println(x);
-        }
-        */
+        long start, end = 0;
+        start = time();
+        Hashtable<Integer, Integer> assignedRows = hungarian.solve();
+        ArrayList<Integer> assignments = hungarian.assignments(assignedRows);
+        int totalCost = hungarian.totalCost(assignments);
+        end = time();
+        System.out.println("Assignments = " + assignments);
+        System.out.println("Total cost = " + totalCost);
+        System.out.println(String.format("Time spent = %d ms", (end - start)));
+        
+        // Brute Force
+        // ArrayList<Integer> solution = hungarian.bruteForce();
     }
     
     public static void main(String[] args) throws Exception
     {
         // test02("data/matrix_01.txt", 1);
-        test02("data/matrix_01.txt", 1);
+        test02("java/data/matrix_03.txt", 5);
     }
 
 }
