@@ -1,19 +1,49 @@
 package com.alg.dp;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Hashtable;
 import java.util.LinkedList;
+
+import com.alg.datastructures.MinHeap;
 
 public class Knapsack
 {
     int[] weights;
     double[] values;
     Double[][] solution;
+    MinHeap<KnapsackSolution> toSolve;
+    Hashtable<KnapsackSolution, Double> alreadySolved = new Hashtable<>();
     
     public Knapsack(int[] weights, double[] values)
     {
         super();
         this.weights = weights;
         this.values = values;
+    }
+    
+    public void sortByDecreasingWeight()
+    {
+        ArrayList<SackItem> data = new ArrayList<>(weights.length);
+        for (int i=0; i<weights.length; i++)
+        {
+            SackItem item = new SackItem(weights[i], values[i]);
+            data.add(item);
+        }
+        Collections.sort(data, new Comparator<SackItem>() {
+
+            @Override
+            public int compare(SackItem o1, SackItem o2)
+            {
+                return o2.weight - o1.weight;
+            }
+        });
+        for (int i=0; i<weights.length; i++)
+        {
+            weights[i] = data.get(i).weight;
+            values[i] = data.get(i).value;
+        }
     }
     
     public void solve(int W)
@@ -40,6 +70,75 @@ public class Knapsack
                 }
             }
         }
+    }
+    
+    public void determineNeededSolutions(int W)
+    {
+        toSolve = new MinHeap<>(new KnapsackSolution[] {});
+        populateNeededSolutions(weights.length, W);
+    }
+    
+    public boolean alreadyAdded(int elementNo, int x)
+    {
+        return toSolve.getActualValue(new KnapsackSolution(elementNo, x)) != null;
+    }
+    
+    public void populateNeededSolutions(int elementNo, int x)
+    {
+        // System.out.println(elementNo + "," + x + " : " + toSolve.getSize());
+        /*
+        if (toSolve.getSize() > 100)
+        {
+            return;
+        }
+        */
+        KnapsackSolution needed = new KnapsackSolution(elementNo, x);
+        toSolve.insertItem(needed);
+        if (elementNo == 0)
+        {
+            return;
+        }
+        int w_i = weights[elementNo-1];
+        if (w_i > x)
+        {
+            return;
+        }
+        if (x -  w_i >= 0)
+        {
+            if (! alreadyAdded(elementNo - 1, x - w_i))
+            populateNeededSolutions(elementNo - 1, x - w_i);
+        }
+        if (! alreadyAdded(elementNo- 1, x))
+        {
+            populateNeededSolutions(elementNo - 1, x);
+        }
+    }
+    
+    public Double solveOptimal(int W)
+    {
+        return solveRecursively(weights.length, W);
+    }
+    
+    public Double solveRecursively(int elementNo, int x)
+    {
+        if (elementNo == 0)
+        {
+            return 0.0;
+        }
+        if (weights[elementNo-1] > x)
+        {
+            return 0.0;
+        }
+        KnapsackSolution input = new KnapsackSolution(elementNo, x);
+        Double val = alreadySolved.get(input);
+        if (val != null)
+        {
+            return val;
+        }
+        Double ret = Math.max(solveRecursively(elementNo-1, x), solveRecursively(elementNo-1, x - weights[elementNo-1]) + values[elementNo - 1]);
+        alreadySolved.put(input, ret);
+        // System.out.println(alreadySolved);
+        return ret;
     }
     
     public Double optimalSolution(int W)
@@ -125,6 +224,12 @@ public class Knapsack
         System.out.println();
         System.out.println("Optimal solution is: " + ks.optimalSolution(6));
         System.out.println("Selected items are: " + ks.selectedPoints(6));
+        ks.determineNeededSolutions(6);
+        ks.toSolve.printData();
+        ks.sortByDecreasingWeight();
+        ks.print();
+        System.out.println(ks.toSolve.getSize());
+        System.out.println(ks.solveOptimal(6));
     }
     
     public static void main(String[] args)
