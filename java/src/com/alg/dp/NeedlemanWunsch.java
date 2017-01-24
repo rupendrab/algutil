@@ -1,11 +1,16 @@
 package com.alg.dp;
 
+import java.util.ArrayList;
+import java.util.LinkedList;
+
 public class NeedlemanWunsch
 {
     int penaltyGap = 10;
-    int penaltyMismatch = 15;
+    int penaltyMismatch = 20;
     String value1;
     String value2;
+    char[] c1;
+    char[] c2;
     int[][] scoreMatrix;
     int m;
     int n;
@@ -15,6 +20,8 @@ public class NeedlemanWunsch
         super();
         this.value1 = value1;
         this.value2 = value2;
+        this.c1 = value1.toCharArray();
+        this.c2 = value2.toCharArray();
         m = value1.length();
         n = value2.length();
         scoreMatrix = new int[m + 1][n + 1];
@@ -31,8 +38,6 @@ public class NeedlemanWunsch
         {
             scoreMatrix[0][j] = j * penaltyGap;
         }
-        char[] c1 = value1.toCharArray();
-        char[] c2 = value2.toCharArray();
         for (int i=1; i<=m; i++)
         {
             for (int j=1; j<=n; j++)
@@ -66,6 +71,65 @@ public class NeedlemanWunsch
             }
             System.out.println();
         }
+    }
+    
+    public String convertToString(LinkedList<Integer> data)
+    {
+        char[] ret = new char[data.size()];
+        for (int i=0; i<data.size(); i++)
+        {
+            ret[i] = (char) data.get(i).intValue();
+        }
+        return new String(ret);
+    }
+    
+    public ArrayList<String> showMatches()
+    {
+        ArrayList<String> ret = new ArrayList<>();
+        if (scoreMatrix == null)
+        {
+            return ret;
+        }
+        LinkedList<Integer> value1M = new LinkedList<>();
+        LinkedList<Integer> value2M = new LinkedList<>();
+        
+        int i = m;
+        int j = n;
+        while (i >= 1 && j >= 1)
+        {
+            int penaltyChars = 0;
+            if (c1[i-1] != c2[j-1])
+            {
+                penaltyChars = penaltyMismatch;
+            }
+            int presentVal = scoreMatrix[i][j];
+            int possibility1 = scoreMatrix[i-1][j-1] + penaltyChars;
+            int possibility2 = scoreMatrix[i-1][j] + penaltyGap;
+            int possibility3 = scoreMatrix[i][j-1] + penaltyGap;
+            if (presentVal == possibility1)
+            {
+                value1M.addFirst((int) c1[i-1]); 
+                value2M.addFirst((int) c2[j-1]); 
+                i--;
+                j--;
+            }
+            else if (presentVal == possibility2)
+            {
+                value1M.addFirst((int) c1[i-1]); 
+                value2M.addFirst(32); 
+                i--;
+            }
+            else if (presentVal == possibility3)
+            {
+                value1M.addFirst(32); 
+                value2M.addFirst((int) c2[j-1]); 
+                j--;
+            }
+        }
+        
+        ret.add(convertToString(value1M));
+        ret.add(convertToString(value2M));
+        return ret;
     }
 
     public int getPenaltyGap()
@@ -102,6 +166,9 @@ public class NeedlemanWunsch
     {
         NeedlemanWunsch nm = new NeedlemanWunsch(v1, v2);
         nm.printMatrix();
+        ArrayList<String> matches = nm.showMatches();
+        System.out.println(matches.get(0));
+        System.out.println(matches.get(1));
     }
     
     public static void main(String[] args)
