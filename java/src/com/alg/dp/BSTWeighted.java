@@ -9,6 +9,7 @@ public class BSTWeighted
     WeightedPoint[] wps;
     int numPoints;
     Double[][] scores;
+    Integer[][] roots;
     
     public BSTWeighted(Integer[] points, Double[] weights)
     {
@@ -24,6 +25,7 @@ public class BSTWeighted
         }
         sortPoints();
         scores = new Double[numPoints][numPoints];
+        roots = new Integer[numPoints][numPoints];
         // initScores();
     }
     
@@ -38,6 +40,7 @@ public class BSTWeighted
         }
         return true;
     }
+    
     public void sortPoints()
     {
         if (! isSorted())
@@ -74,7 +77,7 @@ public class BSTWeighted
                 {
                     continue;
                 }
-                System.out.println(String.format("Calculating: %d, %d", i, i+s));
+                // System.out.println(String.format("Calculating: %d, %d", i, i+s));
                 Double minValue = Double.MAX_VALUE;
                 Double sumPk = sum(i, i+s);
                 int minR = -1;
@@ -88,10 +91,38 @@ public class BSTWeighted
                     }
                 }
                 scores[i][i+s] = minValue;
-                System.out.println("  Score = " + minValue);
+                roots[i][i+s] = minR;
+                // System.out.println("  Score = " + minValue);
             }
         }
         
+    }
+    
+    public BSTNode createBST()
+    {
+        return createBST(0, numPoints-1);
+    }
+    
+    public BSTNode createBST(int from, int to)
+    {
+        BSTNode root = new BSTNode();
+        Integer rootNode = roots[from][to];
+        root.setNode(wps[rootNode].point);
+        if (from == to)
+        {
+            return root;
+        }
+        if (rootNode > from)
+        {
+            BSTNode left = createBST(from, rootNode -1);
+            root.setLeft(left);
+        }
+        if (rootNode < to)
+        {
+            BSTNode right = createBST(rootNode+1, to);
+            root.setRight(right);
+        }
+        return root;
     }
     
     public void printScores()
@@ -106,17 +137,33 @@ public class BSTWeighted
             System.out.println();
         }
     }
-    public static void test01()
+    
+    public void printRoots()
     {
-        Integer[] points = {1, 2, 3, 4};
-        Double[] weights = {2.0, 23.0, 73.0, 1.0};
+        System.out.println();
+        for (int i=0; i<roots.length; i++)
+        {
+            for (int j=0; j<roots[i].length; j++)
+            {
+                System.out.print(String.format("%4d ", (roots[i][j] == null ? -1 : roots[i][j])));
+            }
+            System.out.println();
+        }
+    }
+    
+    public static void test01(Integer[] points, Double[] weights)
+    {
         BSTWeighted bst = new BSTWeighted(points, weights);
         bst.solve();
         bst.printScores();
+        bst.printRoots();
+        BSTNode bstNode = bst.createBST();
+        System.out.println();
+        System.out.println(bstNode);
     }
     public static void main(String[] args) throws Exception
     {
-        test01();
+        test01(new Integer[] {1, 2, 3, 4}, new Double[] {2.0, 23.0, 73.0, 1.0});
     }
 
 }
