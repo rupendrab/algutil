@@ -89,6 +89,26 @@ class Plane(object):
         return output
 
 
+    def is_parallel(self, p):
+        return self.normal_vector.isParallel(p.normal_vector)
+    
+    def is_same(self, p):
+        if self.normal_vector.is_zero():
+            if not p.normal_vector.is_zero():
+                return False
+            else:
+                diff = self.constant_term - p.constant_term
+                return MyDecimal(diff).is_near_zero()
+        elif p.normal_vector.is_zero():
+            return False
+            
+        if not self.is_parallel(p):
+            return False
+        v1 = self.basepoint
+        v2 = p.basepoint
+        v = v1 - v2
+        return (v.isOrthogonal(self.normal_vector) and v.isOrthogonal(p.normal_vector))
+
     @staticmethod
     def first_nonzero_index(iterable):
         for k, item in enumerate(iterable):
